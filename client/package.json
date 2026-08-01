@@ -7,7 +7,9 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Programming Languages"],
+  "categories": [
+    "Programming Languages"
+  ],
   "activationEvents": [
     "onLanguage:erlang"
   ],
@@ -16,8 +18,21 @@
     "languages": [
       {
         "id": "erlang",
-        "extensions": [".erl", ".hrl"],
-        "aliases": ["Erlang"]
+        "extensions": [
+          ".erl",
+          ".hrl",
+          ".escript"
+        ],
+        "aliases": [
+          "Erlang"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "erlang",
+        "scopeName": "source.erlang",
+        "path": "./syntaxes/erlang.tmLanguage.json"
       }
     ],
     "configuration": {
@@ -34,12 +49,15 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -w -p ./",
-    "vscode:prepublish": "npm run compile"
+    "vscode:prepublish": "npm run compile",
+    "check-grammar": "node scripts/check-grammar.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.1.0"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"

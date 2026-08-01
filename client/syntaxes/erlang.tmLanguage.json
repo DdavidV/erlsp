@@ -1,0 +1,131 @@
+{
+  "name": "Erlang",
+  "scopeName": "source.erlang",
+  "fileTypes": ["erl", "hrl", "escript", "app.src"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#module-attributes" },
+    { "include": "#macros" },
+    { "include": "#records" },
+    { "include": "#strings" },
+    { "include": "#char-literal" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#binaries" },
+    { "include": "#variables" },
+    { "include": "#remote-call" },
+    { "include": "#function-call" },
+    { "include": "#operators" },
+    { "include": "#atoms" }
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.percentage.erlang",
+      "match": "%.*$"
+    },
+
+    "module-attributes": {
+      "name": "meta.preprocessor.erlang",
+      "match": "(-)\\s*(module|export|export_type|import|include|include_lib|behaviour|behavior|record|define|undef|ifdef|ifndef|else|endif|type|opaque|spec|callback|optional_callbacks|compile|vsn|on_load|deprecated|dialyzer|feature)\\b",
+      "captures": {
+        "1": { "name": "punctuation.definition.attribute.erlang" },
+        "2": { "name": "keyword.control.directive.erlang" }
+      }
+    },
+
+    "macros": {
+      "name": "entity.name.function.preprocessor.erlang",
+      "match": "\\?\\??[A-Za-z_][A-Za-z0-9_]*"
+    },
+
+    "records": {
+      "match": "(#)([a-z][A-Za-z0-9_]*|'[^']*')",
+      "captures": {
+        "1": { "name": "punctuation.definition.record.erlang" },
+        "2": { "name": "entity.name.type.record.erlang" }
+      }
+    },
+
+    "strings": {
+      "name": "string.quoted.double.erlang",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        { "name": "constant.character.escape.erlang", "match": "\\\\." }
+      ]
+    },
+
+    "char-literal": {
+      "name": "constant.character.erlang",
+      "match": "\\$(\\\\.|.)"
+    },
+
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.erlang",
+          "match": "\\b[0-9]+\\.[0-9]+([eE][+-]?[0-9]+)?\\b"
+        },
+        {
+          "name": "constant.numeric.based.erlang",
+          "match": "\\b[0-9]+#[0-9A-Za-z]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.erlang",
+          "match": "\\b[0-9]+\\b"
+        }
+      ]
+    },
+
+    "keywords": {
+      "name": "keyword.control.erlang",
+      "match": "\\b(after|and|andalso|band|begin|bnot|bor|bsl|bsr|bxor|case|catch|cond|div|end|fun|if|let|maybe|not|of|or|orelse|receive|rem|try|when|xor)\\b"
+    },
+
+    "binaries": {
+      "name": "punctuation.section.binary.erlang",
+      "match": "<<|>>"
+    },
+
+    "variables": {
+      "name": "variable.other.erlang",
+      "match": "\\b([A-Z_][A-Za-z0-9_]*)\\b"
+    },
+
+    "remote-call": {
+      "match": "\\b([a-z][A-Za-z0-9_]*)\\s*(:)\\s*([a-z][A-Za-z0-9_]*)\\s*(?=\\()",
+      "captures": {
+        "1": { "name": "entity.name.namespace.erlang" },
+        "2": { "name": "punctuation.separator.module-function.erlang" },
+        "3": { "name": "entity.name.function.erlang" }
+      }
+    },
+
+    "function-call": {
+      "match": "\\b([a-z][A-Za-z0-9_]*)\\s*(?=\\()",
+      "name": "entity.name.function.erlang"
+    },
+
+    "operators": {
+      "name": "keyword.operator.erlang",
+      "match": "->|=>|:=|=<|>=|==|/=|=:=|=/=|<-|\\+\\+|--|[=+\\-*/<>!|]"
+    },
+
+    "atoms": {
+      "patterns": [
+        {
+          "name": "constant.other.atom.quoted.erlang",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            { "name": "constant.character.escape.erlang", "match": "\\\\." }
+          ]
+        },
+        {
+          "name": "constant.other.atom.erlang",
+          "match": "\\b[a-z][A-Za-z0-9_]*\\b"
+        }
+      ]
+    }
+  }
+}

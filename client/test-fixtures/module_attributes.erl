@@ -1,0 +1,22 @@
+-module(module_attributes).
+-behaviour(gen_server).
+-export([start_link/0, get_config/1]).
+-export_type([config/0]).
+-import(lists, [map/2]).
+-include("erlsp.hrl").
+-include_lib("kernel/include/logger.hrl").
+-record(state, {io :: pid()}).
+-type config() :: map().
+-opaque handle() :: reference().
+-define(TIMEOUT, 5000).
+-spec start_link() -> {ok, pid()}.
+-callback init(term()) -> ok.
+-compile([export_all]).
+-vsn("1.0.0").
+-on_load(setup/0).
+-deprecated([{old_fun, 1, "use new_fun/1 instead"}]).
+-dialyzer({nowarn_function, old_fun/1}).
+-ifdef(TEST).
+-undef(TIMEOUT).
+-else.
+-endif.
