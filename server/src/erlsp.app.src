@@ -2,6 +2,7 @@
   {description, "Erlang language server"},
   {vsn, "0.0.1"},
   {registered, []},
+  {mod, {erlsp_app, []}},
   {applications, [
     kernel,
     stdlib,
