@@ -1,0 +1,13 @@
+# server (rebar3)
+server/_build/
+server/rebar3.crashdump
+
+# client (node)
+client/node_modules/
+client/out/
+client/*.vsix
+client/server/
+
+# misc
+.DS_Store
+*.log

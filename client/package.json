@@ -1,0 +1,47 @@
+{
+  "name": "erlsp",
+  "displayName": "Erlang Language Server",
+  "description": "Language support for Erlang powered by erlsp",
+  "version": "0.0.1",
+  "private": true,
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Programming Languages"],
+  "activationEvents": [
+    "onLanguage:erlang"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "erlang",
+        "extensions": [".erl", ".hrl"],
+        "aliases": ["Erlang"]
+      }
+    ],
+    "configuration": {
+      "title": "erlsp",
+      "properties": {
+        "erlsp.serverPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the erlsp escript. If empty, the bundled server is used."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}

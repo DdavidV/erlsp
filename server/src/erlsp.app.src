@@ -1,0 +1,12 @@
+{application, erlsp, [
+  {description, "Erlang language server"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib,
+    jsx
+  ]},
+  {env, []},
+  {modules, []}
+]}.
