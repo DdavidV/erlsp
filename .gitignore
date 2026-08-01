@@ -8,6 +8,9 @@ client/out/
 client/*.vsix
 client/server/
 
+# packaged extension
+package/
+
 # misc
 .DS_Store
 *.log

@@ -1,9 +1,14 @@
 {
   "name": "erlsp",
-  "displayName": "Erlang Language Server",
+  "displayName": "erlsp",
   "description": "Language support for Erlang powered by erlsp",
   "version": "0.0.1",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DdavidV/erlsp.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -47,14 +52,18 @@
     }
   },
   "scripts": {
-    "compile": "tsc -p ./",
-    "watch": "tsc -w -p ./",
+    "check-types": "tsc -p ./ --noEmit",
+    "compile": "npm run check-types && node esbuild.js",
+    "watch": "node esbuild.js --watch",
     "vscode:prepublish": "npm run compile",
-    "check-grammar": "node scripts/check-grammar.js"
+    "check-grammar": "node scripts/check-grammar.js",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.1",
     "typescript": "^5.4.0",
     "vscode-oniguruma": "^2.0.1",
     "vscode-textmate": "^9.1.0"

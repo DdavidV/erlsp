@@ -21,3 +21,13 @@ Open this folder in VS Code and press F5 (`Run Extension`), or:
 ```sh
 cd client && npm run compile
 ```
+
+## Package the extension
+
+Builds the server escript and produces a `.vsix` at `package/erlsp-<version>.vsix`:
+
+```sh
+./scripts/package.sh
+```
+
+Install it with `code --install-extension package/erlsp-<version>.vsix`.
