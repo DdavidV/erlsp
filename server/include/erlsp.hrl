@@ -15,3 +15,6 @@
 -define(JSONRPC_REQUEST_CANCELLED, -32800).
 %% LSP TextDocumentSyncKind
 -define(TEXT_DOCUMENT_SYNC_FULL, 1).
+%% LSP DiagnosticSeverity
+-define(DIAGNOSTIC_SEVERITY_ERROR, 1).
+-define(DIAGNOSTIC_SEVERITY_WARNING, 2).

@@ -22,6 +22,10 @@ init(_InitArgs) ->
   },
   ChildSpecs = [
     #{
+      id => erlsp_config,
+      start => {erlsp_config, start_link, []}
+    },
+    #{
       id => erlsp_documents,
       start => {erlsp_documents, start_link, []}
     },

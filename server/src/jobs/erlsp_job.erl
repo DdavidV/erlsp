@@ -1,5 +1,25 @@
 -module(erlsp_job).
 
+-include("erlsp.hrl").
+
+%% LSP DiagnosticSeverity: 3 = Information, 4 = Hint are not produced by any job yet.
+-type severity() :: ?DIAGNOSTIC_SEVERITY_ERROR | ?DIAGNOSTIC_SEVERITY_WARNING.
+-type position() :: #{line := non_neg_integer(), character := non_neg_integer()}.
+-type range() :: #{start := position(), 'end' := position()}.
+-type diagnostic() :: #{
+  range := range(),
+  severity := severity(),
+  source := binary(),
+  message := binary()
+}.
+
+-export_type([
+  diagnostic/0,
+  severity/0,
+  position/0,
+  range/0
+]).
+
 -export([
   run/2
 ]).
