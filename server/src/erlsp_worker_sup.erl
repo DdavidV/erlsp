@@ -27,15 +27,16 @@ init(_InitArgs) ->
   },
   {ok, {SupFlags, []}}.
 
--spec start_worker(ReplyTo, Uri, Fun) -> Result when
+%% JobModule must implement the erlsp_job behaviour.
+-spec start_worker(ReplyTo, Uri, JobModule) -> Result when
   ReplyTo :: pid(),
   Uri :: erlsp_documents:uri(),
-  Fun :: fun(() -> term()),
+  JobModule :: module(),
   Result :: {ok, pid()}.
-start_worker(ReplyTo, Uri, Fun) ->
+start_worker(ReplyTo, Uri, JobModule) ->
   ChildSpec = #{
     id => make_ref(),
-    start => {erlsp_worker, start_link, [ReplyTo, Uri, Fun]},
+    start => {erlsp_worker, start_link, [ReplyTo, Uri, JobModule]},
     restart => temporary,
     shutdown => brutal_kill
   },

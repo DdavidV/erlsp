@@ -34,7 +34,7 @@ read_message() ->
       Length = list_to_integer(maps:get("content-length", Headers)),
       case io:get_chars(standard_io, "", Length) of
         eof -> eof;
-        Body -> jsx:decode(list_to_binary(Body))
+        Body -> erlsp_jsonrpc:decode(jsx:decode(list_to_binary(Body)))
       end
   end.
 
