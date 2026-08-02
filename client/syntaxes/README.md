@@ -65,11 +65,27 @@ Common standard prefixes to reuse when extending this grammar:
 | `punctuation.*`                                                       | brackets, separators, delimiters                    |
 | `meta.*`                                                              | structural grouping, rarely themed directly         |
 
+## Recursive structure: `expression` and the top level
+
+This grammar is **recursive**, the standard pattern most non-trivial TextMate grammars use (JSON, JS/TS,
+C/C++, Python, and others all do this) for any language with nested expression syntax. It's the only way a
+flat regex-based tokenizer can handle arbitrary nesting depth without a hardcoded rule for every possible
+combination.
+
+`expression` is a repository entry listing every rule that can appear inside "ordinary expression content".
+Every bracketed construct is a `begin`/`end` block whose own `patterns` includes `#expression`, so content
+nests correctly no matter how deep.
+
+The top-level `patterns` array is deliberately **not** the same list as `expression`. A few rules
+(most importantly **`function-definition`**) are only reachable from the top level, never from inside
+`expression`. This is what lets the grammar tell a function *definition* head apart from a function
+*call* that happens to sit at the start of an indented line.
+
 ## Extending the grammar
 
 1. Add a `repository` entry: a `match` (or `begin`/`end` for multi-line/nested constructs) regex.
 2. Give it a `name` (or per-group `captures`) built from a standard prefix plus an `.erlang` suffix.
-3. Reference it via `{ "include": "#your-key" }` - at the top level, or nested inside another rule if it should only apply in that specific context. Position relative to other rules matters (first match wins).
+3. Reference it via `{ "include": "#your-key" }` - inside `expression` if it's ordinary expression content (reachable anywhere, recursively); at the top level (alongside, not inside, `expression`) only if it must never fire while already inside an expression. Position relative to other rules in the same list matters (first match wins).
 4. Verify with `npm run check-grammar` (see below) before trusting it visually in the editor.
 
 ## Testing changes

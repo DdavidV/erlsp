@@ -2,94 +2,164 @@
 # DO NOT EDIT BY HAND!
 
 Line 1: -module(macros).
-  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
-  "module" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
-  "(" -> source.erlang
-  "macros" -> source.erlang constant.other.atom.erlang
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "module" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "macros" -> source.erlang entity.name.type.class.module.definition.erlang
   ")." -> source.erlang
 Line 2: 
   "" -> source.erlang
 Line 3: -define(TIMEOUT, 5000).
-  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
-  "define" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
-  "(" -> source.erlang
-  "TIMEOUT" -> source.erlang variable.other.erlang
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "define" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "TIMEOUT" -> source.erlang entity.name.function.macro.definition.erlang
   ", " -> source.erlang
   "5000" -> source.erlang constant.numeric.integer.erlang
   ")." -> source.erlang
 Line 4: -define(IS_DEFINED, true).
-  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
-  "define" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
-  "(" -> source.erlang
-  "IS_DEFINED" -> source.erlang variable.other.erlang
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "define" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "IS_DEFINED" -> source.erlang entity.name.function.macro.definition.erlang
   ", " -> source.erlang
-  "true" -> source.erlang constant.other.atom.erlang
+  "true" -> source.erlang constant.language.erlang
   ")." -> source.erlang
-Line 5: 
-  "" -> source.erlang
-Line 6: start_link() ->
-  "start_link" -> source.erlang entity.name.function.erlang
-  "() " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
-Line 7:   gen_server:start_link({local, ?ERLSP_SERVER}, ?MODULE, [], []).
-  "  " -> source.erlang
-  "gen_server" -> source.erlang entity.name.namespace.erlang
-  ":" -> source.erlang punctuation.separator.module-function.erlang
-  "start_link" -> source.erlang entity.name.function.erlang
-  "({" -> source.erlang
-  "local" -> source.erlang constant.other.atom.erlang
+Line 5: -define(VSN, <<"2.0">>).
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "define" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "VSN" -> source.erlang entity.name.function.macro.definition.erlang
   ", " -> source.erlang
-  "?ERLSP_SERVER" -> source.erlang entity.name.function.preprocessor.erlang
-  "}, " -> source.erlang
-  "?MODULE" -> source.erlang entity.name.function.preprocessor.erlang
-  ", [], [])." -> source.erlang
-Line 8: 
+  "<<" -> source.erlang punctuation.section.binary.begin.erlang
+  "\"" -> source.erlang string.quoted.double.erlang
+  "2.0" -> source.erlang string.quoted.double.erlang
+  "\"" -> source.erlang string.quoted.double.erlang
+  ">>" -> source.erlang punctuation.section.binary.end.erlang
+  ")." -> source.erlang
+Line 6: 
   "" -> source.erlang
-Line 9: wait() ->
-  "wait" -> source.erlang entity.name.function.erlang
-  "() " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
-Line 10:   receive
-  "  " -> source.erlang
-  "receive" -> source.erlang keyword.control.erlang
-Line 11:     _ -> ok
-  "    " -> source.erlang
-  "_" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "ok" -> source.erlang constant.other.atom.erlang
-Line 12:   after ?TIMEOUT ->
-  "  " -> source.erlang
-  "after" -> source.erlang keyword.control.erlang
-  " " -> source.erlang
-  "?TIMEOUT" -> source.erlang entity.name.function.preprocessor.erlang
-  " " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
-Line 13:     timeout
-  "    " -> source.erlang
-  "timeout" -> source.erlang constant.other.atom.erlang
-Line 14:   end.
-  "  " -> source.erlang
-  "end" -> source.erlang keyword.control.erlang
+Line 7: -ifdef(TEST).
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "ifdef" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "TEST" -> source.erlang entity.name.function.macro.definition.erlang
+  ")." -> source.erlang
+Line 8: -undef(TIMEOUT).
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "undef" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "TIMEOUT" -> source.erlang entity.name.function.macro.definition.erlang
+  ")." -> source.erlang
+Line 9: -endif.
+  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
+  "endif" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
   "." -> source.erlang
-Line 15: 
-  "" -> source.erlang
-Line 16: check() ->
-  "check" -> source.erlang entity.name.function.erlang
-  "() " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
-Line 17:   ?assertEqual(1, 1),
-  "  " -> source.erlang
-  "?assertEqual" -> source.erlang entity.name.function.preprocessor.erlang
-  "(" -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
+Line 10: -ifndef(TIMEOUT).
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "ifndef" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "TIMEOUT" -> source.erlang entity.name.function.macro.definition.erlang
+  ")." -> source.erlang
+Line 11: -define(TIMEOUT, 1000).
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "define" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "TIMEOUT" -> source.erlang entity.name.function.macro.definition.erlang
   ", " -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  ")," -> source.erlang
-Line 18:   ??QUOTED_MACRO.
-  "  " -> source.erlang
-  "??QUOTED_MACRO" -> source.erlang entity.name.function.preprocessor.erlang
+  "1000" -> source.erlang constant.numeric.integer.erlang
+  ")." -> source.erlang
+Line 12: -endif.
+  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
+  "endif" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
   "." -> source.erlang
-Line 19: 
+Line 13: 
+  "" -> source.erlang
+Line 14: start_link() ->
+  "start_link" -> source.erlang meta.function.erlang entity.name.function.definition.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
+Line 15:   gen_server:start_link({local, ?ERLSP_SERVER}, ?MODULE, [], []).
+  "  " -> source.erlang meta.function.erlang
+  "gen_server" -> source.erlang meta.function.erlang entity.name.namespace.erlang
+  ":" -> source.erlang meta.function.erlang punctuation.separator.module-function.erlang
+  "start_link" -> source.erlang meta.function.erlang entity.name.function.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  "{" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang punctuation.definition.tuple.begin.erlang
+  "local" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang constant.other.atom.erlang
+  "," -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang punctuation.separator.tuple.erlang
+  " " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang
+  "?" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang keyword.operator.macro.erlang
+  "ERLSP_SERVER" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang entity.name.function.macro.erlang
+  "}" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang punctuation.definition.tuple.end.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "?" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang keyword.operator.macro.erlang
+  "MODULE" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang entity.name.function.macro.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "[" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.definition.list.begin.erlang
+  "]" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.definition.list.end.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "[" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.definition.list.begin.erlang
+  "]" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.definition.list.end.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "." -> source.erlang meta.function.erlang punctuation.terminator.function.erlang
+Line 16: 
+  "" -> source.erlang
+Line 17: wait() ->
+  "wait" -> source.erlang meta.function.erlang entity.name.function.definition.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
+Line 18:   receive
+  "  " -> source.erlang meta.function.erlang
+  "receive" -> source.erlang meta.function.erlang keyword.control.receive.erlang
+Line 19:     _ -> ok
+  "    " -> source.erlang meta.function.erlang
+  "_" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
+  " " -> source.erlang meta.function.erlang
+  "ok" -> source.erlang meta.function.erlang constant.other.atom.erlang
+Line 20:   after ?TIMEOUT ->
+  "  " -> source.erlang meta.function.erlang
+  "after" -> source.erlang meta.function.erlang keyword.control.after.erlang
+  " " -> source.erlang meta.function.erlang
+  "?" -> source.erlang meta.function.erlang keyword.operator.macro.erlang
+  "TIMEOUT" -> source.erlang meta.function.erlang entity.name.function.macro.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
+Line 21:     timeout
+  "    " -> source.erlang meta.function.erlang
+  "timeout" -> source.erlang meta.function.erlang constant.other.atom.erlang
+Line 22:   end.
+  "  " -> source.erlang meta.function.erlang
+  "end" -> source.erlang meta.function.erlang keyword.control.end.erlang
+  "." -> source.erlang meta.function.erlang punctuation.terminator.function.erlang
+Line 23: 
+  "" -> source.erlang
+Line 24: check() ->
+  "check" -> source.erlang meta.function.erlang entity.name.function.definition.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
+Line 25:   ?assertEqual(1, 1),
+  "  " -> source.erlang meta.function.erlang
+  "?" -> source.erlang meta.function.erlang keyword.operator.macro.erlang
+  "assertEqual" -> source.erlang meta.function.erlang entity.name.function.macro.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  "1" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang constant.numeric.integer.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "1" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang constant.numeric.integer.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "," -> source.erlang meta.function.erlang
+Line 26:   ??QUOTED_MACRO.
+  "  " -> source.erlang meta.function.erlang
+  "??" -> source.erlang meta.function.erlang keyword.operator.macro.erlang
+  "QUOTED_MACRO" -> source.erlang meta.function.erlang entity.name.function.macro.erlang
+  "." -> source.erlang meta.function.erlang punctuation.terminator.function.erlang
+Line 27: 
   "" -> source.erlang

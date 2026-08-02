@@ -2,49 +2,47 @@
 # DO NOT EDIT BY HAND!
 
 Line 1: -module(atoms).
-  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
-  "module" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
-  "(" -> source.erlang
-  "atoms" -> source.erlang constant.other.atom.erlang
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "module" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "atoms" -> source.erlang entity.name.type.class.module.definition.erlang
   ")." -> source.erlang
 Line 2: 
   "" -> source.erlang
 Line 3: f() ->
-  "f" -> source.erlang entity.name.function.erlang
-  "() " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
+  "f" -> source.erlang meta.function.erlang entity.name.function.definition.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
 Line 4:   ok,
-  "  " -> source.erlang
-  "ok" -> source.erlang constant.other.atom.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "ok" -> source.erlang meta.function.erlang constant.other.atom.erlang
+  "," -> source.erlang meta.function.erlang
 Line 5:   error,
-  "  " -> source.erlang
-  "error" -> source.erlang constant.other.atom.erlang
-  "," -> source.erlang
-Line 6:   undefined,
-  "  " -> source.erlang
-  "undefined" -> source.erlang constant.other.atom.erlang
-  "," -> source.erlang
-Line 7:   'quoted atom',
-  "  " -> source.erlang
-  "'" -> source.erlang constant.other.atom.quoted.erlang
-  "quoted atom" -> source.erlang constant.other.atom.quoted.erlang
-  "'" -> source.erlang constant.other.atom.quoted.erlang
-  "," -> source.erlang
-Line 8:   'atom with spaces and !@#',
-  "  " -> source.erlang
-  "'" -> source.erlang constant.other.atom.quoted.erlang
-  "atom with spaces and !@#" -> source.erlang constant.other.atom.quoted.erlang
-  "'" -> source.erlang constant.other.atom.quoted.erlang
-  "," -> source.erlang
-Line 9:   '',
-  "  " -> source.erlang
-  "'" -> source.erlang constant.other.atom.quoted.erlang
-  "'" -> source.erlang constant.other.atom.quoted.erlang
-  "," -> source.erlang
-Line 10:   ok.
-  "  " -> source.erlang
-  "ok" -> source.erlang constant.other.atom.erlang
-  "." -> source.erlang
-Line 11: 
+  "  " -> source.erlang meta.function.erlang
+  "error" -> source.erlang meta.function.erlang constant.other.atom.erlang
+  "," -> source.erlang meta.function.erlang
+Line 6:   'quoted atom',
+  "  " -> source.erlang meta.function.erlang
+  "'" -> source.erlang meta.function.erlang constant.other.atom.quoted.erlang
+  "quoted atom" -> source.erlang meta.function.erlang constant.other.atom.quoted.erlang
+  "'" -> source.erlang meta.function.erlang constant.other.atom.quoted.erlang
+  "," -> source.erlang meta.function.erlang
+Line 7:   'atom with spaces and !@#',
+  "  " -> source.erlang meta.function.erlang
+  "'" -> source.erlang meta.function.erlang constant.other.atom.quoted.erlang
+  "atom with spaces and !@#" -> source.erlang meta.function.erlang constant.other.atom.quoted.erlang
+  "'" -> source.erlang meta.function.erlang constant.other.atom.quoted.erlang
+  "," -> source.erlang meta.function.erlang
+Line 8:   '',
+  "  " -> source.erlang meta.function.erlang
+  "'" -> source.erlang meta.function.erlang constant.other.atom.quoted.erlang
+  "'" -> source.erlang meta.function.erlang constant.other.atom.quoted.erlang
+  "," -> source.erlang meta.function.erlang
+Line 9:   ok.
+  "  " -> source.erlang meta.function.erlang
+  "ok" -> source.erlang meta.function.erlang constant.other.atom.erlang
+  "." -> source.erlang meta.function.erlang punctuation.terminator.function.erlang
+Line 10: 
   "" -> source.erlang

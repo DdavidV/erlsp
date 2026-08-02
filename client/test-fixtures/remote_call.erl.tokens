@@ -2,90 +2,118 @@
 # DO NOT EDIT BY HAND!
 
 Line 1: -module(remote_call).
-  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
-  "module" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
-  "(" -> source.erlang
-  "remote_call" -> source.erlang constant.other.atom.erlang
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "module" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "remote_call" -> source.erlang entity.name.type.class.module.definition.erlang
   ")." -> source.erlang
 Line 2: 
   "" -> source.erlang
 Line 3: -define(F, f).
-  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
-  "define" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
-  "(" -> source.erlang
-  "F" -> source.erlang variable.other.erlang
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "define" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "F" -> source.erlang entity.name.function.macro.definition.erlang
   ", " -> source.erlang
   "f" -> source.erlang constant.other.atom.erlang
   ")." -> source.erlang
 Line 4: 
   "" -> source.erlang
 Line 5: f() ->
-  "f" -> source.erlang entity.name.function.erlang
-  "() " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
+  "f" -> source.erlang meta.function.erlang entity.name.function.definition.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
 Line 6:   application:get_env(erlsp, some_key, default_value),
-  "  " -> source.erlang
-  "application" -> source.erlang entity.name.namespace.erlang
-  ":" -> source.erlang punctuation.separator.module-function.erlang
-  "get_env" -> source.erlang entity.name.function.erlang
-  "(" -> source.erlang
-  "erlsp" -> source.erlang constant.other.atom.erlang
-  ", " -> source.erlang
-  "some_key" -> source.erlang constant.other.atom.erlang
-  ", " -> source.erlang
-  "default_value" -> source.erlang constant.other.atom.erlang
-  ")," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "application" -> source.erlang meta.function.erlang entity.name.namespace.erlang
+  ":" -> source.erlang meta.function.erlang punctuation.separator.module-function.erlang
+  "get_env" -> source.erlang meta.function.erlang entity.name.function.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  "erlsp" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang constant.other.atom.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "some_key" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang constant.other.atom.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "default_value" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang constant.other.atom.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 7:   gen_server:start_link({local, ?ERLSP_SERVER}, ?MODULE, [], []),
-  "  " -> source.erlang
-  "gen_server" -> source.erlang entity.name.namespace.erlang
-  ":" -> source.erlang punctuation.separator.module-function.erlang
-  "start_link" -> source.erlang entity.name.function.erlang
-  "({" -> source.erlang
-  "local" -> source.erlang constant.other.atom.erlang
-  ", " -> source.erlang
-  "?ERLSP_SERVER" -> source.erlang entity.name.function.preprocessor.erlang
-  "}, " -> source.erlang
-  "?MODULE" -> source.erlang entity.name.function.preprocessor.erlang
-  ", [], [])," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "gen_server" -> source.erlang meta.function.erlang entity.name.namespace.erlang
+  ":" -> source.erlang meta.function.erlang punctuation.separator.module-function.erlang
+  "start_link" -> source.erlang meta.function.erlang entity.name.function.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  "{" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang punctuation.definition.tuple.begin.erlang
+  "local" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang constant.other.atom.erlang
+  "," -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang punctuation.separator.tuple.erlang
+  " " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang
+  "?" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang keyword.operator.macro.erlang
+  "ERLSP_SERVER" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang entity.name.function.macro.erlang
+  "}" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang punctuation.definition.tuple.end.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "?" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang keyword.operator.macro.erlang
+  "MODULE" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang entity.name.function.macro.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "[" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.definition.list.begin.erlang
+  "]" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.definition.list.end.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "[" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.definition.list.begin.erlang
+  "]" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.definition.list.end.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 8:   lists:map(fun(X) -> X end, [1, 2, 3]),
-  "  " -> source.erlang
-  "lists" -> source.erlang entity.name.namespace.erlang
-  ":" -> source.erlang punctuation.separator.module-function.erlang
-  "map" -> source.erlang entity.name.function.erlang
-  "(" -> source.erlang
-  "fun" -> source.erlang keyword.control.erlang
-  "(" -> source.erlang
-  "X" -> source.erlang variable.other.erlang
-  ") " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "X" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "end" -> source.erlang keyword.control.erlang
-  ", [" -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  ", " -> source.erlang
-  "2" -> source.erlang constant.numeric.integer.erlang
-  ", " -> source.erlang
-  "3" -> source.erlang constant.numeric.integer.erlang
-  "])," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "lists" -> source.erlang meta.function.erlang entity.name.namespace.erlang
+  ":" -> source.erlang meta.function.erlang punctuation.separator.module-function.erlang
+  "map" -> source.erlang meta.function.erlang entity.name.function.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  "fun" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang keyword.control.fun.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  "X" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.expression.parenthesized.erlang variable.other.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "->" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "X" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "end" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang keyword.control.end.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "[" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.definition.list.begin.erlang
+  "1" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.separator.list.erlang
+  " " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang
+  "2" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.separator.list.erlang
+  " " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang
+  "3" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "]" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.definition.list.end.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 9:   m:F(),
-  "  " -> source.erlang
-  "m" -> source.erlang constant.other.atom.erlang
-  ":" -> source.erlang
-  "F" -> source.erlang variable.other.erlang
-  "()," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "m" -> source.erlang meta.function.erlang constant.other.atom.erlang
+  ":" -> source.erlang meta.function.erlang
+  "F" -> source.erlang meta.function.erlang variable.other.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 10:   M:f(),
-  "  " -> source.erlang
-  "M" -> source.erlang variable.other.erlang
-  ":" -> source.erlang
-  "f" -> source.erlang entity.name.function.erlang
-  "()," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "M" -> source.erlang meta.function.erlang variable.other.erlang
+  ":" -> source.erlang meta.function.erlang
+  "f" -> source.erlang meta.function.erlang entity.name.function.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 11:   m:?F().
-  "  " -> source.erlang
-  "m" -> source.erlang constant.other.atom.erlang
-  ":" -> source.erlang
-  "?F" -> source.erlang entity.name.function.preprocessor.erlang
-  "()." -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "m" -> source.erlang meta.function.erlang constant.other.atom.erlang
+  ":" -> source.erlang meta.function.erlang
+  "?" -> source.erlang meta.function.erlang keyword.operator.macro.erlang
+  "F" -> source.erlang meta.function.erlang entity.name.function.macro.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "." -> source.erlang meta.function.erlang punctuation.terminator.function.erlang
 Line 12: 
   "" -> source.erlang

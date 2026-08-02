@@ -2,76 +2,94 @@
 # DO NOT EDIT BY HAND!
 
 Line 1: -module(numbers).
-  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
-  "module" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
-  "(" -> source.erlang
-  "numbers" -> source.erlang constant.other.atom.erlang
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "module" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "numbers" -> source.erlang entity.name.type.class.module.definition.erlang
   ")." -> source.erlang
 Line 2: 
   "" -> source.erlang
 Line 3: f() ->
-  "f" -> source.erlang entity.name.function.erlang
-  "() " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
+  "f" -> source.erlang meta.function.erlang entity.name.function.definition.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
 Line 4:   A = 42,
-  "  " -> source.erlang
-  "A" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "42" -> source.erlang constant.numeric.integer.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "A" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "42" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang
 Line 5:   B = 3.14,
-  "  " -> source.erlang
-  "B" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "3.14" -> source.erlang constant.numeric.float.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "B" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "3.14" -> source.erlang meta.function.erlang constant.numeric.float.erlang
+  "," -> source.erlang meta.function.erlang
 Line 6:   C = 2.5e10,
-  "  " -> source.erlang
-  "C" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "2.5e10" -> source.erlang constant.numeric.float.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "C" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "2.5e10" -> source.erlang meta.function.erlang constant.numeric.float.erlang
+  "," -> source.erlang meta.function.erlang
 Line 7:   D = 2.5e-10,
-  "  " -> source.erlang
-  "D" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "2.5e-10" -> source.erlang constant.numeric.float.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "D" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "2.5e-10" -> source.erlang meta.function.erlang constant.numeric.float.erlang
+  "," -> source.erlang meta.function.erlang
 Line 8:   E = 16#FF,
-  "  " -> source.erlang
-  "E" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "16#FF" -> source.erlang constant.numeric.based.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "E" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "16#FF" -> source.erlang meta.function.erlang constant.numeric.based.erlang
+  "," -> source.erlang meta.function.erlang
 Line 9:   F = 2#1010,
-  "  " -> source.erlang
-  "F" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "2#1010" -> source.erlang constant.numeric.based.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "F" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "2#1010" -> source.erlang meta.function.erlang constant.numeric.based.erlang
+  "," -> source.erlang meta.function.erlang
 Line 10:   G = 0,
-  "  " -> source.erlang
-  "G" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "0" -> source.erlang constant.numeric.integer.erlang
-  "," -> source.erlang
-Line 11:   ok.
-  "  " -> source.erlang
-  "ok" -> source.erlang constant.other.atom.erlang
-  "." -> source.erlang
-Line 12: 
+  "  " -> source.erlang meta.function.erlang
+  "G" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "0" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang
+Line 11:   H = 1_000_000,
+  "  " -> source.erlang meta.function.erlang
+  "H" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "1_000_000" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang
+Line 12:   I = 16#DEAD_BEEF,
+  "  " -> source.erlang meta.function.erlang
+  "I" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "16#DEAD_BEEF" -> source.erlang meta.function.erlang constant.numeric.based.erlang
+  "," -> source.erlang meta.function.erlang
+Line 13:   ok.
+  "  " -> source.erlang meta.function.erlang
+  "ok" -> source.erlang meta.function.erlang constant.other.atom.erlang
+  "." -> source.erlang meta.function.erlang punctuation.terminator.function.erlang
+Line 14: 
   "" -> source.erlang

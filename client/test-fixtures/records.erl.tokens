@@ -2,95 +2,107 @@
 # DO NOT EDIT BY HAND!
 
 Line 1: -module(records).
-  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
-  "module" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
-  "(" -> source.erlang
-  "records" -> source.erlang constant.other.atom.erlang
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "module" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "records" -> source.erlang entity.name.type.class.module.definition.erlang
   ")." -> source.erlang
 Line 2: 
   "" -> source.erlang
 Line 3: -record(state, {io :: pid()}).
-  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
-  "record" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
-  "(" -> source.erlang
-  "state" -> source.erlang constant.other.atom.erlang
-  ", {" -> source.erlang
-  "io" -> source.erlang constant.other.atom.erlang
-  " :: " -> source.erlang
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "record" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "state" -> source.erlang entity.name.type.record.erlang
+  "," -> source.erlang punctuation.separator.parameters.erlang
+  " " -> source.erlang
+  "{" -> source.erlang punctuation.definition.class.record.begin.erlang
+  "io " -> source.erlang variable.other.field.erlang
+  "::" -> source.erlang keyword.operator.erlang
+  " " -> source.erlang
   "pid" -> source.erlang entity.name.function.erlang
-  "()})." -> source.erlang
+  "(" -> source.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "}" -> source.erlang punctuation.definition.class.record.end.erlang
+  ")" -> source.erlang punctuation.erlang
+  "." -> source.erlang punctuation.erlang
 Line 4: -record('quoted record', {a, b}).
-  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
-  "record" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
-  "(" -> source.erlang
-  "'" -> source.erlang constant.other.atom.quoted.erlang
-  "quoted record" -> source.erlang constant.other.atom.quoted.erlang
-  "'" -> source.erlang constant.other.atom.quoted.erlang
-  ", {" -> source.erlang
-  "a" -> source.erlang constant.other.atom.erlang
-  ", " -> source.erlang
-  "b" -> source.erlang constant.other.atom.erlang
-  "})." -> source.erlang
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "record" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "'quoted record'" -> source.erlang entity.name.type.record.erlang
+  "," -> source.erlang punctuation.separator.parameters.erlang
+  " " -> source.erlang
+  "{" -> source.erlang punctuation.definition.class.record.begin.erlang
+  "a" -> source.erlang variable.other.field.erlang
+  "," -> source.erlang punctuation.separator.class.record.erlang
+  " b" -> source.erlang variable.other.field.erlang
+  "}" -> source.erlang punctuation.definition.class.record.end.erlang
+  ")" -> source.erlang punctuation.erlang
+  "." -> source.erlang punctuation.erlang
 Line 5: 
   "" -> source.erlang
 Line 6: f() ->
-  "f" -> source.erlang entity.name.function.erlang
-  "() " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
+  "f" -> source.erlang meta.function.erlang entity.name.function.definition.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
 Line 7:   S = #state{io = self()},
-  "  " -> source.erlang
-  "S" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "#" -> source.erlang punctuation.definition.record.erlang
-  "state" -> source.erlang entity.name.type.record.erlang
-  "{" -> source.erlang
-  "io" -> source.erlang constant.other.atom.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "self" -> source.erlang entity.name.function.erlang
-  "()}," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "S" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "#" -> source.erlang meta.function.erlang punctuation.definition.record.erlang
+  "state" -> source.erlang meta.function.erlang entity.name.type.record.erlang
+  "{" -> source.erlang meta.function.erlang punctuation.definition.class.record.begin.erlang
+  "io " -> source.erlang meta.function.erlang variable.other.field.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "self" -> source.erlang meta.function.erlang entity.name.function.guard.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "}" -> source.erlang meta.function.erlang punctuation.definition.class.record.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 8:   #state.io,
-  "  " -> source.erlang
-  "#" -> source.erlang punctuation.definition.record.erlang
-  "state" -> source.erlang entity.name.type.record.erlang
-  "." -> source.erlang
-  "io" -> source.erlang constant.other.atom.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "#" -> source.erlang meta.function.erlang punctuation.definition.record.erlang
+  "state" -> source.erlang meta.function.erlang entity.name.type.record.erlang
+  "." -> source.erlang meta.function.erlang punctuation.separator.record-field.erlang
+  "io" -> source.erlang meta.function.erlang variable.other.field.erlang
+  "," -> source.erlang meta.function.erlang
 Line 9:   S2 = S#state{io = undefined},
-  "  " -> source.erlang
-  "S2" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "S" -> source.erlang variable.other.erlang
-  "#" -> source.erlang punctuation.definition.record.erlang
-  "state" -> source.erlang entity.name.type.record.erlang
-  "{" -> source.erlang
-  "io" -> source.erlang constant.other.atom.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "undefined" -> source.erlang constant.other.atom.erlang
-  "}," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "S2" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "S" -> source.erlang meta.function.erlang variable.other.erlang
+  "#" -> source.erlang meta.function.erlang punctuation.definition.record.erlang
+  "state" -> source.erlang meta.function.erlang entity.name.type.record.erlang
+  "{" -> source.erlang meta.function.erlang punctuation.definition.class.record.begin.erlang
+  "io " -> source.erlang meta.function.erlang variable.other.field.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "undefined" -> source.erlang meta.function.erlang constant.language.erlang
+  "}" -> source.erlang meta.function.erlang punctuation.definition.class.record.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 10:   #'quoted record'{a = 1, b = 2}.
-  "  " -> source.erlang
-  "#" -> source.erlang punctuation.definition.record.erlang
-  "'quoted record'" -> source.erlang entity.name.type.record.erlang
-  "{" -> source.erlang
-  "a" -> source.erlang constant.other.atom.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  ", " -> source.erlang
-  "b" -> source.erlang constant.other.atom.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "2" -> source.erlang constant.numeric.integer.erlang
-  "}." -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "#" -> source.erlang meta.function.erlang punctuation.definition.record.erlang
+  "'quoted record'" -> source.erlang meta.function.erlang entity.name.type.record.erlang
+  "{" -> source.erlang meta.function.erlang punctuation.definition.class.record.begin.erlang
+  "a " -> source.erlang meta.function.erlang variable.other.field.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "1" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang punctuation.separator.class.record.erlang
+  " b " -> source.erlang meta.function.erlang variable.other.field.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "2" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  "}" -> source.erlang meta.function.erlang punctuation.definition.class.record.end.erlang
+  "." -> source.erlang meta.function.erlang punctuation.terminator.function.erlang
 Line 11: 
   "" -> source.erlang

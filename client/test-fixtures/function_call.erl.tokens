@@ -2,53 +2,63 @@
 # DO NOT EDIT BY HAND!
 
 Line 1: -module(function_call).
-  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
-  "module" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
-  "(" -> source.erlang
-  "function_call" -> source.erlang constant.other.atom.erlang
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "module" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "function_call" -> source.erlang entity.name.type.class.module.definition.erlang
   ")." -> source.erlang
 Line 2: 
   "" -> source.erlang
 Line 3: f() ->
-  "f" -> source.erlang entity.name.function.erlang
-  "() " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
+  "f" -> source.erlang meta.function.erlang entity.name.function.definition.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
 Line 4:   ok.
-  "  " -> source.erlang
-  "ok" -> source.erlang constant.other.atom.erlang
-  "." -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "ok" -> source.erlang meta.function.erlang constant.other.atom.erlang
+  "." -> source.erlang meta.function.erlang punctuation.terminator.function.erlang
 Line 5: 
   "" -> source.erlang
 Line 6: g(M, F) ->
-  "g" -> source.erlang entity.name.function.erlang
-  "(" -> source.erlang
-  "M" -> source.erlang variable.other.erlang
-  ", " -> source.erlang
-  "F" -> source.erlang variable.other.erlang
-  ") " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
+  "g" -> source.erlang meta.function.erlang entity.name.function.definition.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  "M" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang variable.other.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "F" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang variable.other.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
 Line 7:   f(),
-  "  " -> source.erlang
-  "f" -> source.erlang entity.name.function.erlang
-  "()," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "f" -> source.erlang meta.function.erlang entity.name.function.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 8:   handle_message(M, F),
-  "  " -> source.erlang
-  "handle_message" -> source.erlang entity.name.function.erlang
-  "(" -> source.erlang
-  "M" -> source.erlang variable.other.erlang
-  ", " -> source.erlang
-  "F" -> source.erlang variable.other.erlang
-  ")," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "handle_message" -> source.erlang meta.function.erlang entity.name.function.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  "M" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang variable.other.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "F" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang variable.other.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 9:   erlang:apply(M, F, []).
-  "  " -> source.erlang
-  "erlang" -> source.erlang entity.name.namespace.erlang
-  ":" -> source.erlang punctuation.separator.module-function.erlang
-  "apply" -> source.erlang entity.name.function.erlang
-  "(" -> source.erlang
-  "M" -> source.erlang variable.other.erlang
-  ", " -> source.erlang
-  "F" -> source.erlang variable.other.erlang
-  ", [])." -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "erlang" -> source.erlang meta.function.erlang entity.name.namespace.erlang
+  ":" -> source.erlang meta.function.erlang punctuation.separator.module-function.erlang
+  "apply" -> source.erlang meta.function.erlang entity.name.function.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  "M" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang variable.other.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "F" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang variable.other.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "[" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.definition.list.begin.erlang
+  "]" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.list.erlang punctuation.definition.list.end.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "." -> source.erlang meta.function.erlang punctuation.terminator.function.erlang
 Line 10: 
   "" -> source.erlang
 Line 11: -spec h() -> ok.
@@ -56,26 +66,31 @@ Line 11: -spec h() -> ok.
   "spec" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
   " " -> source.erlang
   "h" -> source.erlang entity.name.function.erlang
-  "() " -> source.erlang
+  "(" -> source.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang
   "->" -> source.erlang keyword.operator.erlang
   " " -> source.erlang
   "ok" -> source.erlang constant.other.atom.erlang
   "." -> source.erlang
 Line 12: h() ->
-  "h" -> source.erlang entity.name.function.erlang
-  "() " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
+  "h" -> source.erlang meta.function.erlang entity.name.function.definition.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
 Line 13:   g(f, f),
-  "  " -> source.erlang
-  "g" -> source.erlang entity.name.function.erlang
-  "(" -> source.erlang
-  "f" -> source.erlang constant.other.atom.erlang
-  ", " -> source.erlang
-  "f" -> source.erlang constant.other.atom.erlang
-  ")," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "g" -> source.erlang meta.function.erlang entity.name.function.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  "f" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang constant.other.atom.erlang
+  ", " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "f" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang constant.other.atom.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 14:   ok.
-  "  " -> source.erlang
-  "ok" -> source.erlang constant.other.atom.erlang
-  "." -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "ok" -> source.erlang meta.function.erlang constant.other.atom.erlang
+  "." -> source.erlang meta.function.erlang punctuation.terminator.function.erlang
 Line 15: 
   "" -> source.erlang

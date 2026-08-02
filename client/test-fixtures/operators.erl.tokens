@@ -2,176 +2,201 @@
 # DO NOT EDIT BY HAND!
 
 Line 1: -module(operators).
-  "-" -> source.erlang meta.preprocessor.erlang punctuation.definition.attribute.erlang
-  "module" -> source.erlang meta.preprocessor.erlang keyword.control.directive.erlang
-  "(" -> source.erlang
-  "operators" -> source.erlang constant.other.atom.erlang
+  "-" -> source.erlang punctuation.definition.attribute.erlang
+  "module" -> source.erlang keyword.control.directive.erlang
+  "(" -> source.erlang punctuation.erlang
+  "operators" -> source.erlang entity.name.type.class.module.definition.erlang
   ")." -> source.erlang
 Line 2: 
   "" -> source.erlang
 Line 3: f(X) ->
-  "f" -> source.erlang entity.name.function.erlang
-  "(" -> source.erlang
-  "X" -> source.erlang variable.other.erlang
-  ") " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
+  "f" -> source.erlang meta.function.erlang entity.name.function.definition.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  "X" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang variable.other.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
 Line 4:   X.
-  "  " -> source.erlang
-  "X" -> source.erlang variable.other.erlang
-  "." -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "X" -> source.erlang meta.function.erlang variable.other.erlang
+  "." -> source.erlang meta.function.erlang punctuation.terminator.function.erlang
 Line 5: 
   "" -> source.erlang
 Line 6: g(#{key := Value} = Map) ->
-  "g" -> source.erlang entity.name.function.erlang
-  "(#{" -> source.erlang
-  "key" -> source.erlang constant.other.atom.erlang
-  " " -> source.erlang
-  ":=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "Value" -> source.erlang variable.other.erlang
-  "} " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "Map" -> source.erlang variable.other.erlang
-  ") " -> source.erlang
-  "->" -> source.erlang keyword.operator.erlang
+  "g" -> source.erlang meta.function.erlang entity.name.function.definition.erlang
+  "(" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.begin.erlang
+  "#" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "{" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang punctuation.definition.tuple.begin.erlang
+  "key" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang constant.other.atom.erlang
+  " " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang
+  ":=" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang
+  "Value" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang variable.other.erlang
+  "}" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang meta.structure.tuple.erlang punctuation.definition.tuple.end.erlang
+  " " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "=" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang
+  "Map" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang variable.other.erlang
+  ")" -> source.erlang meta.function.erlang meta.expression.parenthesized.erlang punctuation.section.expression.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "->" -> source.erlang meta.function.erlang punctuation.separator.clause-head-body.erlang
 Line 7:   Map2 = Map#{key => Value},
-  "  " -> source.erlang
-  "Map2" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "Map" -> source.erlang variable.other.erlang
-  "#{" -> source.erlang
-  "key" -> source.erlang constant.other.atom.erlang
-  " " -> source.erlang
-  "=>" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "Value" -> source.erlang variable.other.erlang
-  "}," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "Map2" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "Map" -> source.erlang meta.function.erlang variable.other.erlang
+  "#" -> source.erlang meta.function.erlang
+  "{" -> source.erlang meta.function.erlang meta.structure.tuple.erlang punctuation.definition.tuple.begin.erlang
+  "key" -> source.erlang meta.function.erlang meta.structure.tuple.erlang constant.other.atom.erlang
+  " " -> source.erlang meta.function.erlang meta.structure.tuple.erlang
+  "=>" -> source.erlang meta.function.erlang meta.structure.tuple.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang meta.structure.tuple.erlang
+  "Value" -> source.erlang meta.function.erlang meta.structure.tuple.erlang variable.other.erlang
+  "}" -> source.erlang meta.function.erlang meta.structure.tuple.erlang punctuation.definition.tuple.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 8:   A = 1 =< 2,
-  "  " -> source.erlang
-  "A" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  " " -> source.erlang
-  "=<" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "2" -> source.erlang constant.numeric.integer.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "A" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "1" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  " " -> source.erlang meta.function.erlang
+  "=<" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "2" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang
 Line 9:   B = 2 >= 1,
-  "  " -> source.erlang
-  "B" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "2" -> source.erlang constant.numeric.integer.erlang
-  " " -> source.erlang
-  ">=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "B" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "2" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  " " -> source.erlang meta.function.erlang
+  ">=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "1" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang
 Line 10:   C = 1 == 1,
-  "  " -> source.erlang
-  "C" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  " " -> source.erlang
-  "==" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "C" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "1" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  " " -> source.erlang meta.function.erlang
+  "==" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "1" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang
 Line 11:   D = 1 /= 2,
-  "  " -> source.erlang
-  "D" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  " " -> source.erlang
-  "/=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "2" -> source.erlang constant.numeric.integer.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "D" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "1" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  " " -> source.erlang meta.function.erlang
+  "/=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "2" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang
 Line 12:   E = 1 =:= 1,
-  "  " -> source.erlang
-  "E" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  " " -> source.erlang
-  "=:=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "E" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "1" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  " " -> source.erlang meta.function.erlang
+  "=:=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "1" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang
 Line 13:   F = 1 =/= 2,
-  "  " -> source.erlang
-  "F" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  " " -> source.erlang
-  "=/=" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "2" -> source.erlang constant.numeric.integer.erlang
-  "," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "F" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "1" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  " " -> source.erlang meta.function.erlang
+  "=/=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "2" -> source.erlang meta.function.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang
 Line 14:   [H | T] = [1, 2, 3],
-  "  [" -> source.erlang
-  "H" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "|" -> source.erlang keyword.operator.erlang
-  " " -> source.erlang
-  "T" -> source.erlang variable.other.erlang
-  "] " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " [" -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  ", " -> source.erlang
-  "2" -> source.erlang constant.numeric.integer.erlang
-  ", " -> source.erlang
-  "3" -> source.erlang constant.numeric.integer.erlang
-  "]," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "[" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.definition.list.begin.erlang
+  "H" -> source.erlang meta.function.erlang meta.structure.list.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang meta.structure.list.erlang
+  "|" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.separator.list.erlang
+  " " -> source.erlang meta.function.erlang meta.structure.list.erlang
+  "T" -> source.erlang meta.function.erlang meta.structure.list.erlang variable.other.erlang
+  "]" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.definition.list.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "[" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.definition.list.begin.erlang
+  "1" -> source.erlang meta.function.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.separator.list.erlang
+  " " -> source.erlang meta.function.erlang meta.structure.list.erlang
+  "2" -> source.erlang meta.function.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.separator.list.erlang
+  " " -> source.erlang meta.function.erlang meta.structure.list.erlang
+  "3" -> source.erlang meta.function.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "]" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.definition.list.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 15:   L = [1, 2] ++ [3, 4],
-  "  " -> source.erlang
-  "L" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " [" -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  ", " -> source.erlang
-  "2" -> source.erlang constant.numeric.integer.erlang
-  "] " -> source.erlang
-  "++" -> source.erlang keyword.operator.erlang
-  " [" -> source.erlang
-  "3" -> source.erlang constant.numeric.integer.erlang
-  ", " -> source.erlang
-  "4" -> source.erlang constant.numeric.integer.erlang
-  "]," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "L" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "[" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.definition.list.begin.erlang
+  "1" -> source.erlang meta.function.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.separator.list.erlang
+  " " -> source.erlang meta.function.erlang meta.structure.list.erlang
+  "2" -> source.erlang meta.function.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "]" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.definition.list.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "++" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "[" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.definition.list.begin.erlang
+  "3" -> source.erlang meta.function.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.separator.list.erlang
+  " " -> source.erlang meta.function.erlang meta.structure.list.erlang
+  "4" -> source.erlang meta.function.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "]" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.definition.list.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 16:   L2 = [1, 2, 3] -- [2],
-  "  " -> source.erlang
-  "L2" -> source.erlang variable.other.erlang
-  " " -> source.erlang
-  "=" -> source.erlang keyword.operator.erlang
-  " [" -> source.erlang
-  "1" -> source.erlang constant.numeric.integer.erlang
-  ", " -> source.erlang
-  "2" -> source.erlang constant.numeric.integer.erlang
-  ", " -> source.erlang
-  "3" -> source.erlang constant.numeric.integer.erlang
-  "] " -> source.erlang
-  "--" -> source.erlang keyword.operator.erlang
-  " [" -> source.erlang
-  "2" -> source.erlang constant.numeric.integer.erlang
-  "]," -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "L2" -> source.erlang meta.function.erlang variable.other.erlang
+  " " -> source.erlang meta.function.erlang
+  "=" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "[" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.definition.list.begin.erlang
+  "1" -> source.erlang meta.function.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.separator.list.erlang
+  " " -> source.erlang meta.function.erlang meta.structure.list.erlang
+  "2" -> source.erlang meta.function.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "," -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.separator.list.erlang
+  " " -> source.erlang meta.function.erlang meta.structure.list.erlang
+  "3" -> source.erlang meta.function.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "]" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.definition.list.end.erlang
+  " " -> source.erlang meta.function.erlang
+  "--" -> source.erlang meta.function.erlang keyword.operator.erlang
+  " " -> source.erlang meta.function.erlang
+  "[" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.definition.list.begin.erlang
+  "2" -> source.erlang meta.function.erlang meta.structure.list.erlang constant.numeric.integer.erlang
+  "]" -> source.erlang meta.function.erlang meta.structure.list.erlang punctuation.definition.list.end.erlang
+  "," -> source.erlang meta.function.erlang
 Line 17:   ok.
-  "  " -> source.erlang
-  "ok" -> source.erlang constant.other.atom.erlang
-  "." -> source.erlang
+  "  " -> source.erlang meta.function.erlang
+  "ok" -> source.erlang meta.function.erlang constant.other.atom.erlang
+  "." -> source.erlang meta.function.erlang punctuation.terminator.function.erlang
 Line 18: 
   "" -> source.erlang
