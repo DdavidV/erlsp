@@ -7,7 +7,8 @@
     "yrl",
     "xrl",
     "escript",
-    "app.src"
+    "app.src",
+    "rebar.config"
   ],
   "patterns": [
     { "include": "#comments" },

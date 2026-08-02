@@ -26,7 +26,15 @@
         "extensions": [
           ".erl",
           ".hrl",
-          ".escript"
+          ".escript",
+          ".yrl",
+          ".xrl"
+        ],
+        "filenames": [
+          "rebar.config"
+        ],
+        "filenamePatterns": [
+          "*.app.src"
         ],
         "aliases": [
           "Erlang"
