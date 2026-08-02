@@ -3,6 +3,7 @@
 -behaviour(gen_server).
 
 -include("erlsp.hrl").
+-include_lib("kernel/include/logger.hrl").
 
 -export([
   start_link/0,
@@ -44,6 +45,7 @@ handle_cast({message, Message}, State) ->
   handle_message(Message),
   {noreply, State};
 handle_cast(io_closed, State) ->
+  ?LOG_INFO("stdin closed, shutting down"),
   {stop, normal, State}.
 
 -spec terminate(Reason, State) -> Result when
@@ -54,10 +56,28 @@ terminate(_Reason, _State) ->
   ok.
 
 handle_message(#{<<"id">> := Id, <<"method">> := <<"initialize">>}) ->
-  erlsp_io:send(erlsp_jsonrpc:reply(Id, #{<<"capabilities">> => #{}}));
+  ?LOG_INFO("received initialize request"),
+  Capabilities = #{
+    <<"textDocumentSync">> => #{
+      <<"openClose">> => true,
+      <<"change">> => ?TEXT_DOCUMENT_SYNC_FULL
+    }
+  },
+  erlsp_io:send(erlsp_jsonrpc:reply(Id, #{<<"capabilities">> => Capabilities}));
 handle_message(#{<<"id">> := Id, <<"method">> := <<"shutdown">>}) ->
   erlsp_io:send(erlsp_jsonrpc:reply(Id, null));
-handle_message(#{<<"id">> := Id}) ->
+handle_message(#{<<"method">> := <<"textDocument/didOpen">>, <<"params">> := Params}) ->
+  #{<<"textDocument">> := #{<<"uri">> := Uri, <<"text">> := Text}} = Params,
+  erlsp_documents:open(Uri, Text);
+handle_message(#{<<"method">> := <<"textDocument/didChange">>, <<"params">> := Params}) ->
+  #{<<"textDocument">> := #{<<"uri">> := Uri}, <<"contentChanges">> := Changes} = Params,
+  #{<<"text">> := Text} = lists:last(Changes),
+  erlsp_documents:update(Uri, Text);
+handle_message(#{<<"method">> := <<"textDocument/didClose">>, <<"params">> := Params}) ->
+  #{<<"textDocument">> := #{<<"uri">> := Uri}} = Params,
+  erlsp_documents:close(Uri);
+handle_message(#{<<"id">> := Id, <<"method">> := Method}) ->
+  ?LOG_WARNING("method not found: ~s", [Method]),
   erlsp_io:send(erlsp_jsonrpc:error(Id, ?JSONRPC_METHOD_NOT_FOUND, <<"Method not found">>));
 handle_message(_Message) ->
   ok.

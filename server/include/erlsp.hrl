@@ -13,3 +13,5 @@
 -define(JSONRPC_PARSE_ERROR, -32700).
 %% LSP
 -define(JSONRPC_REQUEST_CANCELLED, -32800).
+%% LSP TextDocumentSyncKind
+-define(TEXT_DOCUMENT_SYNC_FULL, 1).

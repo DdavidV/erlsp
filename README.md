@@ -2,6 +2,9 @@
 
 Erlang language server (`server/`, escript-based) and its VS Code extension client (`client/`).
 
+Inspired by [`erlang_ls`](https://github.com/erlang-ls/erlang_ls) and [`elp`](https://github.com/WhatsApp/erlang-language-platform) (Erlang Language Platform),
+two existing Erlang language servers whose design choices (and tradeoffs) informed several architectural decisions here.
+
 ## Requirements
 
 - Erlang/OTP 28.2

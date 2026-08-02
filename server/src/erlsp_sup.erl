@@ -22,6 +22,11 @@ init(_InitArgs) ->
   },
   ChildSpecs = [
     #{
+      id => erlsp_documents,
+      start => {erlsp_documents, start_link, []}
+    },
+    %% Start erlsp_server last so that messages are only handled after every service is operational
+    #{
       id => erlsp_server,
       start => {erlsp_server, start_link, []}
     }
