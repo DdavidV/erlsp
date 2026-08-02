@@ -5,16 +5,18 @@
 -include("erlsp.hrl").
 -include_lib("kernel/include/logger.hrl").
 
+-record(state, {io :: pid(), jobs :: #{erlsp_documents:uri() => pid()}}).
+
+-type state() :: #state{}.
+
 -export([
   start_link/0,
   init/1,
   handle_call/3,
   handle_cast/2,
+  handle_info/2,
   terminate/2
 ]).
-
--record(state, {io :: pid()}).
--type state() :: #state{}.
 
 -spec start_link() -> Result when
   Result :: {ok, pid()}.
@@ -27,7 +29,7 @@ start_link() ->
 init(_InitArgs) ->
   process_flag(trap_exit, true),
   {ok, IoPid} = erlsp_io:start_link(),
-  {ok, #state{io = IoPid}}.
+  {ok, #state{io = IoPid, jobs = #{}}}.
 
 -spec handle_call(Request, From, State) -> Result when
   Request :: term(),
@@ -42,11 +44,26 @@ handle_call(_Request, _From, State) ->
   State :: state(),
   Result :: {noreply, state()} | {stop, normal, state()}.
 handle_cast({message, Message}, State) ->
-  handle_message(Message),
-  {noreply, State};
+  NewState = handle_message(Message, State),
+  {noreply, NewState};
 handle_cast(io_closed, State) ->
   ?LOG_INFO("stdin closed, shutting down"),
   {stop, normal, State}.
+
+-spec handle_info(Info, State) -> Result when
+  Info :: {worker_result, pid(), erlsp_documents:uri(), term()},
+  State :: state(),
+  Result :: {noreply, state()}.
+handle_info({worker_result, WorkerPid, Uri, Result}, State) ->
+  NewState = case maps:find(Uri, State#state.jobs) of
+    {ok, WorkerPid} ->
+      ?LOG_DEBUG("worker for ~s finished: ~p", [Uri, Result]),
+      State#state{jobs = maps:remove(Uri, State#state.jobs)};
+    _ ->
+      %% Stale/cancelled job's result arrived after a newer job took its place, ignore.
+      State
+  end,
+  {noreply, NewState}.
 
 -spec terminate(Reason, State) -> Result when
   Reason :: term(),
@@ -55,7 +72,36 @@ handle_cast(io_closed, State) ->
 terminate(_Reason, _State) ->
   ok.
 
-handle_message(#{<<"id">> := Id, <<"method">> := <<"initialize">>}) ->
+%% Cancels any in-flight job for Uri and removes it from Jobs.
+-spec cancel_job(Uri, Jobs) -> Result when
+  Uri :: erlsp_documents:uri(),
+  Jobs :: #{erlsp_documents:uri() => pid()},
+  Result :: #{erlsp_documents:uri() => pid()}.
+cancel_job(Uri, Jobs) ->
+  case maps:find(Uri, Jobs) of
+    {ok, WorkerPid} ->
+      exit(WorkerPid, kill),
+      maps:remove(Uri, Jobs);
+    error ->
+      Jobs
+  end.
+
+%% Cancels any existing job for Uri, then starts a new one, recording it in Jobs.
+-spec start_job(Uri, Fun, Jobs) -> Result when
+  Uri :: erlsp_documents:uri(),
+  Fun :: fun(() -> term()),
+  Jobs :: #{erlsp_documents:uri() => pid()},
+  Result :: #{erlsp_documents:uri() => pid()}.
+start_job(Uri, Fun, Jobs) ->
+  CancelledJobs = cancel_job(Uri, Jobs),
+  {ok, WorkerPid} = erlsp_worker_sup:start_worker(self(), Uri, Fun),
+  CancelledJobs#{Uri => WorkerPid}.
+
+-spec handle_message(Message, State) -> NewState when
+  Message :: map(),
+  State :: state(),
+  NewState :: state().
+handle_message(#{<<"id">> := Id, <<"method">> := <<"initialize">>}, State) ->
   ?LOG_INFO("received initialize request"),
   Capabilities = #{
     <<"textDocumentSync">> => #{
@@ -63,21 +109,30 @@ handle_message(#{<<"id">> := Id, <<"method">> := <<"initialize">>}) ->
       <<"change">> => ?TEXT_DOCUMENT_SYNC_FULL
     }
   },
-  erlsp_io:send(erlsp_jsonrpc:reply(Id, #{<<"capabilities">> => Capabilities}));
-handle_message(#{<<"id">> := Id, <<"method">> := <<"shutdown">>}) ->
-  erlsp_io:send(erlsp_jsonrpc:reply(Id, null));
-handle_message(#{<<"method">> := <<"textDocument/didOpen">>, <<"params">> := Params}) ->
+  erlsp_io:send(erlsp_jsonrpc:reply(Id, #{<<"capabilities">> => Capabilities})),
+  State;
+handle_message(#{<<"id">> := Id, <<"method">> := <<"shutdown">>}, State) ->
+  erlsp_io:send(erlsp_jsonrpc:reply(Id, null)),
+  State;
+handle_message(#{<<"method">> := <<"textDocument/didOpen">>, <<"params">> := Params}, State) ->
   #{<<"textDocument">> := #{<<"uri">> := Uri, <<"text">> := Text}} = Params,
-  erlsp_documents:open(Uri, Text);
-handle_message(#{<<"method">> := <<"textDocument/didChange">>, <<"params">> := Params}) ->
+  erlsp_documents:open(Uri, Text),
+  Jobs = start_job(Uri, fun() -> ok end, State#state.jobs),
+  State#state{jobs = Jobs};
+handle_message(#{<<"method">> := <<"textDocument/didChange">>, <<"params">> := Params}, State) ->
   #{<<"textDocument">> := #{<<"uri">> := Uri}, <<"contentChanges">> := Changes} = Params,
   #{<<"text">> := Text} = lists:last(Changes),
-  erlsp_documents:update(Uri, Text);
-handle_message(#{<<"method">> := <<"textDocument/didClose">>, <<"params">> := Params}) ->
+  erlsp_documents:update(Uri, Text),
+  Jobs = start_job(Uri, fun() -> ok end, State#state.jobs),
+  State#state{jobs = Jobs};
+handle_message(#{<<"method">> := <<"textDocument/didClose">>, <<"params">> := Params}, State) ->
   #{<<"textDocument">> := #{<<"uri">> := Uri}} = Params,
-  erlsp_documents:close(Uri);
-handle_message(#{<<"id">> := Id, <<"method">> := Method}) ->
+  erlsp_documents:close(Uri),
+  Jobs = cancel_job(Uri, State#state.jobs),
+  State#state{jobs = Jobs};
+handle_message(#{<<"id">> := Id, <<"method">> := Method}, State) ->
   ?LOG_WARNING("method not found: ~s", [Method]),
-  erlsp_io:send(erlsp_jsonrpc:error(Id, ?JSONRPC_METHOD_NOT_FOUND, <<"Method not found">>));
-handle_message(_Message) ->
-  ok.
+  erlsp_io:send(erlsp_jsonrpc:error(Id, ?JSONRPC_METHOD_NOT_FOUND, <<"Method not found">>)),
+  State;
+handle_message(_Message, State) ->
+  State.

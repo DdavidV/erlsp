@@ -25,6 +25,11 @@ init(_InitArgs) ->
       id => erlsp_documents,
       start => {erlsp_documents, start_link, []}
     },
+    #{
+      id => erlsp_worker_sup,
+      start => {erlsp_worker_sup, start_link, []},
+      type => supervisor
+    },
     %% Start erlsp_server last so that messages are only handled after every service is operational
     #{
       id => erlsp_server,

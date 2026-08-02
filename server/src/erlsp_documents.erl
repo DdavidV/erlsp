@@ -4,6 +4,17 @@
 
 -include("erlsp.hrl").
 
+-record(state, {}).
+
+-type state() :: #state{}.
+-type uri() :: binary().
+-type text() :: binary().
+
+-export_type([
+  uri/0,
+  text/0
+]).
+
 -export([
   start_link/0,
   init/1,
@@ -18,12 +29,6 @@
   close/1,
   get_text/1
 ]).
-
--type uri() :: binary().
--type text() :: binary().
-
--record(state, {}).
--type state() :: #state{}.
 
 -spec start_link() -> Result when
   Result :: {ok, pid()}.
