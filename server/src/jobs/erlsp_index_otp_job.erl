@@ -25,5 +25,8 @@ run(_Uri) ->
 -spec otp_erl_files() -> Result when
   Result :: [file:filename()].
 otp_erl_files() ->
+  %% "**" recurses into subdirectories - some apps nest source further
+  %% (e.g. wx's generated bindings live under lib/wx-*/src/gen/*.erl), not
+  %% just directly under src/.
   RootDir = code:root_dir(),
-  filelib:wildcard(filename:join([RootDir, "lib", "*", "src", "*.erl"])).
+  filelib:wildcard(filename:join([RootDir, "lib", "*", "src", "**/*.erl"])).

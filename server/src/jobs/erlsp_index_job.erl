@@ -25,7 +25,8 @@ run(_Uri) ->
 -spec workspace_erl_files() -> Result when
   Result :: [file:filename()].
 workspace_erl_files() ->
-  lists:append([
-    filelib:wildcard(filename:join(Dir, "*.erl"))
-  || Dir <- erlsp_config:include_paths()
-  ]).
+  %% "**" recurses into subdirectories (e.g. src/jobs/*.erl), not just
+  %% Dir's immediate contents - a plain "*.erl" glob would silently miss
+  %% any .erl file nested one level deeper.
+  lists:append([filelib:wildcard(filename:join(Dir, "**/*.erl"))
+               || Dir <- erlsp_config:include_paths()]).

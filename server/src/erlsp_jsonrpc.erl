@@ -99,4 +99,5 @@ decode_key(<<"character">>) -> character;
 decode_key(<<"capabilities">>) -> capabilities;
 decode_key(<<"processId">>) -> processId;
 decode_key(<<"rootUri">>) -> rootUri;
+decode_key(<<"position">>) -> position;
 decode_key(UnknownKey) -> UnknownKey.

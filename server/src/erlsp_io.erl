@@ -11,6 +11,12 @@
 -spec start_link() -> Result when
   Result :: {ok, pid()}.
 start_link() ->
+  %% LSP's Content-Length header counts UTF-8 bytes, not characters, so
+  %% standard_io must read/write raw bytes (latin1) rather than OTP's
+  %% default unicode mode - otherwise a body containing any non-ASCII
+  %% character desyncs io:get_chars/3's Length from the actual byte count,
+  %% corrupting this message and every one after it.
+  ok = io:setopts(standard_io, [{encoding, latin1}]),
   Pid = spawn_link(?MODULE, loop, []),
   {ok, Pid}.
 
@@ -34,7 +40,7 @@ read_message() ->
       Length = list_to_integer(maps:get("content-length", Headers)),
       case io:get_chars(standard_io, "", Length) of
         eof -> eof;
-        Body -> erlsp_jsonrpc:decode(jsx:decode(list_to_binary(Body)))
+        Body -> erlsp_jsonrpc:decode(jsx:decode(unicode:characters_to_binary(Body, latin1, utf8)))
       end
   end.
 

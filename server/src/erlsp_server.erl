@@ -5,7 +5,10 @@
 -include("erlsp.hrl").
 -include_lib("kernel/include/logger.hrl").
 
--record(state, {io :: pid(), jobs :: #{erlsp_documents:uri() => {module(), pid()}}}).
+-type jobs_for_uri() :: #{module() => pid()}.
+-type jobs() :: #{erlsp_documents:uri() => jobs_for_uri()}.
+
+-record(state, {io :: pid(), jobs :: jobs()}).
 
 -type state() :: #state{}.
 
@@ -51,20 +54,27 @@ handle_cast(io_closed, State) ->
   {stop, normal, State}.
 
 -spec handle_info(Info, State) -> Result when
-  Info :: {worker_result, pid(), erlsp_documents:uri(), module(), term()},
+  Info :: term(),
   State :: state(),
-  Result :: {noreply, state()}.
+  Result :: {noreply, state()} | {stop, term(), state()}.
 handle_info({worker_result, WorkerPid, Uri, JobModule, Result}, State) ->
-  NewState = case maps:find(Uri, State#state.jobs) of
-    {ok, {JobModule, WorkerPid}} ->
+  JobsForUri = maps:get(Uri, State#state.jobs, #{}),
+  NewState = case maps:find(JobModule, JobsForUri) of
+    {ok, WorkerPid} ->
       ?LOG_DEBUG("~p result for ~s: ~p", [JobModule, Uri, Result]),
-      RemainingJobs = maps:remove(Uri, State#state.jobs),
+      RemainingJobs = remove_job(Uri, JobModule, State#state.jobs),
       handle_job_result(JobModule, Uri, Result, State#state{jobs = RemainingJobs});
     _ ->
       %% Stale/cancelled job's result arrived after a newer job took its place, ignore.
       State
   end,
-  {noreply, NewState}.
+  {noreply, NewState};
+handle_info({'EXIT', IoPid, Reason}, #state{io = IoPid} = State) ->
+  ?LOG_ERROR("erlsp_io exited: ~p", [Reason]),
+  {stop, Reason, State};
+handle_info(Info, State) ->
+  ?LOG_WARNING("unexpected message: ~p", [Info]),
+  {noreply, State}.
 
 -spec terminate(Reason, State) -> Result when
   Reason :: term(),
@@ -73,31 +83,62 @@ handle_info({worker_result, WorkerPid, Uri, JobModule, Result}, State) ->
 terminate(_Reason, _State) ->
   ok.
 
-%% Cancels any in-flight job for Uri and removes it from Jobs.
--spec cancel_job(Uri, Jobs) -> Result when
+%% Removes JobModule's slot for Uri from Jobs, cleaning up the outer Uri
+%% entry too once it's left empty (so cancel_jobs_for_uri/2 sees nothing
+%% for a Uri with no jobs, rather than a stale empty map).
+-spec remove_job(Uri, JobModule, Jobs) -> Result when
   Uri :: erlsp_documents:uri(),
-  Jobs :: #{erlsp_documents:uri() => {module(), pid()}},
-  Result :: #{erlsp_documents:uri() => {module(), pid()}}.
-cancel_job(Uri, Jobs) ->
-  case maps:find(Uri, Jobs) of
-    {ok, {_JobModule, WorkerPid}} ->
+  JobModule :: module(),
+  Jobs :: jobs(),
+  Result :: jobs().
+remove_job(Uri, JobModule, Jobs) ->
+  JobsForUri = maps:remove(JobModule, maps:get(Uri, Jobs, #{})),
+  case map_size(JobsForUri) of
+    0 -> maps:remove(Uri, Jobs);
+    _Size -> Jobs#{Uri => JobsForUri}
+  end.
+
+%% Cancels any existing JobModule job for Uri, then starts a new one
+%% running JobModule:run(Uri), recording it in Jobs.
+%% Independent of whatever other job kinds are running for the same Uri.
+-spec start_job(Uri, JobModule, Jobs) -> Result when
+  Uri :: erlsp_documents:uri(),
+  JobModule :: module(),
+  Jobs :: jobs(),
+  Result :: jobs().
+start_job(Uri, JobModule, Jobs) ->
+  CancelledJobs = cancel_job(Uri, JobModule, Jobs),
+  {ok, WorkerPid} = erlsp_worker_sup:start_worker(self(), Uri, JobModule),
+  JobsForUri = maps:get(Uri, CancelledJobs, #{}),
+  CancelledJobs#{Uri => JobsForUri#{JobModule => WorkerPid}}.
+
+%% Cancels JobModule's in-flight job for Uri, if any, leaving any other
+%% job kind running for that same Uri untouched.
+-spec cancel_job(Uri, JobModule, Jobs) -> Result when
+  Uri :: erlsp_documents:uri(),
+  JobModule :: module(),
+  Jobs :: jobs(),
+  Result :: jobs().
+cancel_job(Uri, JobModule, Jobs) ->
+  JobsForUri = maps:get(Uri, Jobs, #{}),
+  case maps:find(JobModule, JobsForUri) of
+    {ok, WorkerPid} ->
       exit(WorkerPid, kill),
-      maps:remove(Uri, Jobs);
+      remove_job(Uri, JobModule, Jobs);
     error ->
       Jobs
   end.
 
-%% Cancels any existing job for Uri, then starts a new one running
-%% JobModule:run(Uri) (see erlsp_job), recording it in Jobs.
--spec start_job(Uri, JobModule, Jobs) -> Result when
+%% Cancels every in-flight job for Uri, regardless of kind - used when a
+%% document closes, since nothing further should run against it.
+-spec cancel_jobs_for_uri(Uri, Jobs) -> Result when
   Uri :: erlsp_documents:uri(),
-  JobModule :: module(),
-  Jobs :: #{erlsp_documents:uri() => {module(), pid()}},
-  Result :: #{erlsp_documents:uri() => {module(), pid()}}.
-start_job(Uri, JobModule, Jobs) ->
-  CancelledJobs = cancel_job(Uri, Jobs),
-  {ok, WorkerPid} = erlsp_worker_sup:start_worker(self(), Uri, JobModule),
-  CancelledJobs#{Uri => {JobModule, WorkerPid}}.
+  Jobs :: jobs(),
+  Result :: jobs().
+cancel_jobs_for_uri(Uri, Jobs) ->
+  JobsForUri = maps:get(Uri, Jobs, #{}),
+  [exit(WorkerPid, kill) || WorkerPid <- maps:values(JobsForUri)],
+  maps:remove(Uri, Jobs).
 
 %% Dispatches a finished job's result to whatever it should do next. Each
 %% job module gets its own clause here, since different job types produce
@@ -117,6 +158,8 @@ handle_job_result(erlsp_index_job, Uri, ok, State) ->
   Jobs = start_job(Uri, erlsp_index_otp_job, State#state.jobs),
   State#state{jobs = Jobs};
 handle_job_result(erlsp_index_otp_job, _Uri, ok, State) ->
+  State;
+handle_job_result(erlsp_index_file_job, _Uri, ok, State) ->
   State.
 
 -spec publish_diagnostics(Uri, Diagnostics) -> Result when
@@ -140,7 +183,8 @@ handle_message(#{id := Id, method := <<"initialize">>, params := Params}, State)
       openClose => true,
       change => ?TEXT_DOCUMENT_SYNC_FULL,
       save => #{includeText => false}
-    }
+    },
+    definitionProvider => true
   },
   erlsp_io:send(erlsp_jsonrpc:reply(Id, #{capabilities => Capabilities})),
   Jobs = start_job(RootUri, erlsp_index_job, State#state.jobs),
@@ -160,14 +204,26 @@ handle_message(#{method := <<"textDocument/didChange">>, params := Params}, Stat
   State;
 handle_message(#{method := <<"textDocument/didSave">>, params := Params}, State) ->
   #{textDocument := #{uri := Uri}} = Params,
-  Jobs = start_job(Uri, erlsp_diag_compiler, State#state.jobs),
+  Jobs0 = start_job(Uri, erlsp_diag_compiler, State#state.jobs),
+  Jobs = start_job(Uri, erlsp_index_file_job, Jobs0),
   State#state{jobs = Jobs};
 handle_message(#{method := <<"textDocument/didClose">>, params := Params}, State) ->
   #{textDocument := #{uri := Uri}} = Params,
   erlsp_documents:close(Uri),
-  Jobs = cancel_job(Uri, State#state.jobs),
+  Jobs = cancel_jobs_for_uri(Uri, State#state.jobs),
   publish_diagnostics(Uri, []),
   State#state{jobs = Jobs};
+handle_message(#{id := Id, method := <<"textDocument/definition">>, params := Params}, State) ->
+  #{textDocument := #{uri := Uri}, position := #{line := Line, character := Character}} = Params,
+  Result = case erlsp_definition:locate(Uri, Line, Character) of
+    {ok, {DefinitionUri, DefinitionLine}} ->
+      Position = #{line => DefinitionLine - 1, character => 0},
+      #{uri => DefinitionUri, range => #{start => Position, 'end' => Position}};
+    error ->
+      null
+  end,
+  erlsp_io:send(erlsp_jsonrpc:reply(Id, Result)),
+  State;
 handle_message(#{id := Id, method := Method}, State) ->
   ?LOG_WARNING("method not found: ~s", [Method]),
   erlsp_io:send(erlsp_jsonrpc:error(Id, ?JSONRPC_METHOD_NOT_FOUND, <<"Method not found">>)),
