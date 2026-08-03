@@ -20,6 +20,12 @@ start_link(ReplyTo, Uri, JobModule) ->
   Result :: ok.
 run(ReplyTo, Uri, JobModule) ->
   proc_lib:init_ack({ok, self()}),
-  Result = erlsp_job:run(JobModule, Uri),
+  Result =
+    try
+      erlsp_job:run(JobModule, Uri)
+    catch
+      Class:Reason:Stacktrace ->
+        {job_crashed, Class, Reason, Stacktrace}
+    end,
   ReplyTo ! {worker_result, self(), Uri, JobModule, Result},
   ok.

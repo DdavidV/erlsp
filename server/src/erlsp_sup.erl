@@ -26,6 +26,10 @@ init(_InitArgs) ->
       start => {erlsp_config, start_link, []}
     },
     #{
+      id => erlsp_index,
+      start => {erlsp_index, start_link, []}
+    },
+    #{
       id => erlsp_documents,
       start => {erlsp_documents, start_link, []}
     },

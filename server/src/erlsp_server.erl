@@ -58,8 +58,8 @@ handle_info({worker_result, WorkerPid, Uri, JobModule, Result}, State) ->
   NewState = case maps:find(Uri, State#state.jobs) of
     {ok, {JobModule, WorkerPid}} ->
       ?LOG_DEBUG("~p result for ~s: ~p", [JobModule, Uri, Result]),
-      handle_job_result(JobModule, Uri, Result),
-      State#state{jobs = maps:remove(Uri, State#state.jobs)};
+      RemainingJobs = maps:remove(Uri, State#state.jobs),
+      handle_job_result(JobModule, Uri, Result, State#state{jobs = RemainingJobs});
     _ ->
       %% Stale/cancelled job's result arrived after a newer job took its place, ignore.
       State
@@ -102,12 +102,22 @@ start_job(Uri, JobModule, Jobs) ->
 %% Dispatches a finished job's result to whatever it should do next. Each
 %% job module gets its own clause here, since different job types produce
 %% differently-shaped results.
--spec handle_job_result(JobModule, Uri, Result) -> ok when
+-spec handle_job_result(JobModule, Uri, Result, State) -> state() when
   JobModule :: module(),
   Uri :: erlsp_documents:uri(),
-  Result :: term().
-handle_job_result(erlsp_diag_compiler, Uri, Diagnostics) ->
-  publish_diagnostics(Uri, Diagnostics).
+  Result :: term(),
+  State :: state().
+handle_job_result(JobModule, Uri, {job_crashed, Class, Reason, Stacktrace}, State) ->
+  ?LOG_ERROR("~p crashed for ~s: ~p:~p~n~p", [JobModule, Uri, Class, Reason, Stacktrace]),
+  State;
+handle_job_result(erlsp_diag_compiler, Uri, Diagnostics, State) ->
+  publish_diagnostics(Uri, Diagnostics),
+  State;
+handle_job_result(erlsp_index_job, Uri, ok, State) ->
+  Jobs = start_job(Uri, erlsp_index_otp_job, State#state.jobs),
+  State#state{jobs = Jobs};
+handle_job_result(erlsp_index_otp_job, _Uri, ok, State) ->
+  State.
 
 -spec publish_diagnostics(Uri, Diagnostics) -> Result when
   Uri :: erlsp_documents:uri(),
@@ -133,7 +143,8 @@ handle_message(#{id := Id, method := <<"initialize">>, params := Params}, State)
     }
   },
   erlsp_io:send(erlsp_jsonrpc:reply(Id, #{capabilities => Capabilities})),
-  State;
+  Jobs = start_job(RootUri, erlsp_index_job, State#state.jobs),
+  State#state{jobs = Jobs};
 handle_message(#{id := Id, method := <<"shutdown">>}, State) ->
   erlsp_io:send(erlsp_jsonrpc:reply(Id, null)),
   State;
