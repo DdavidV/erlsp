@@ -23,6 +23,7 @@
 
 -export([
   index_file/1,
+  index_files/3,
   module_location/1,
   function_location/3,
   type_location/3,
@@ -68,6 +69,61 @@ index_file(Path) ->
     {error, _Reason} ->
       ok
   end.
+
+%% Indexes every Path in Paths, reporting {update, ...} against Token
+%% whenever the rounded percentage changes plus always on the last file
+%% so the final report reflects 100% exactly. Each report's message shows
+%% a live "Current/Total Unit" count (e.g. "342/809 files") rather than a
+%% static label.
+-spec index_files(Paths, Token, Unit) -> Result when
+  Paths :: [file:filename()],
+  Token :: erlsp_report:token(),
+  Unit :: unicode:chardata(),
+  Result :: ok.
+index_files(Paths, Token, Unit) ->
+  Total = length(Paths),
+  index_files(Paths, Token, Unit, 0, Total).
+
+-spec index_files(Paths, Token, Unit, Current, Total) -> Result when
+  Paths :: [file:filename()],
+  Token :: erlsp_report:token(),
+  Unit :: unicode:chardata(),
+  Current :: non_neg_integer(),
+  Total :: non_neg_integer(),
+  Result :: ok.
+index_files([], _Token, _Unit, _Current, _Total) ->
+  ok;
+index_files([Path | Rest], Token, Unit, Current, Total) ->
+  index_file(Path),
+  NewCurrent = Current + 1,
+  case should_report_progress(Current, NewCurrent, Total) of
+    true ->
+      Message = unicode:characters_to_binary(io_lib:format("~b/~b ~s", [NewCurrent, Total, Unit])),
+      erlsp_report:report(Token, {update, Message, progress_percentage(NewCurrent, Total)});
+    false -> ok
+  end,
+  index_files(Rest, Token, Unit, NewCurrent, Total).
+
+%% Reports on the very first and very last file and otherwise only when the rounded
+%% percentage actually changes from the previous file to this one.
+-spec should_report_progress(PreviousCurrent, NewCurrent, Total) -> Result when
+  PreviousCurrent :: non_neg_integer(),
+  NewCurrent :: non_neg_integer(),
+  Total :: non_neg_integer(),
+  Result :: boolean().
+should_report_progress(_PreviousCurrent, NewCurrent, Total) when NewCurrent =:= Total ->
+  true;
+should_report_progress(0, _NewCurrent, _Total) ->
+  true;
+should_report_progress(PreviousCurrent, NewCurrent, Total) when Total > 0 ->
+  progress_percentage(PreviousCurrent, Total) =/= progress_percentage(NewCurrent, Total).
+
+-spec progress_percentage(Current, Total) -> Result when
+  Current :: non_neg_integer(),
+  Total :: non_neg_integer(),
+  Result :: 0..100.
+progress_percentage(_Current, 0) -> 100;
+progress_percentage(Current, Total) -> (Current * 100) div Total.
 
 %% Every other file's path mentioned in Forms' -file markers (which epp
 %% emits, in order, at every file transition during preprocessing - see

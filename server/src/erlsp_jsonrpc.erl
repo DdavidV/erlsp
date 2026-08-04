@@ -6,6 +6,7 @@
   reply/2,
   error/3,
   notification/2,
+  request/3,
   frame/1,
   decode/1
 ]).
@@ -28,6 +29,19 @@ reply(Id, Result) ->
 notification(Method, Params) ->
   frame(#{
     jsonrpc => ?VSN,
+    method => Method,
+    params => Params
+  }).
+
+-spec request(Id, Method, Params) -> Message when
+  Id :: jsx:json_term(),
+  Method :: binary(),
+  Params :: jsx:json_term(),
+  Message :: iodata().
+request(Id, Method, Params) ->
+  frame(#{
+    jsonrpc => ?VSN,
+    id => Id,
     method => Method,
     params => Params
   }).

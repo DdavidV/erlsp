@@ -5,21 +5,24 @@
 -include_lib("kernel/include/logger.hrl").
 
 -export([
-  run/1
+  run/2
 ]).
 
 %% Parses every OTP application's source under the running Erlang
 %% installation's lib/ directory and records where each module and
 %% function is defined, so go-to-definition also works
 %% for stdlib/kernel/etc.
--spec run(Uri) -> Result when
+-spec run(Uri, Token) -> Result when
   Uri :: erlsp_documents:uri(),
+  Token :: erlsp_report:token(),
   Result :: ok.
-run(_Uri) ->
+run(_Uri, Token) ->
+  erlsp_report:report(Token, {'begin', <<"Indexing">>}),
   Paths = otp_erl_files(),
   ?LOG_INFO("indexing ~b OTP files", [length(Paths)]),
-  lists:foreach(fun erlsp_index:index_file/1, Paths),
+  erlsp_index:index_files(Paths, Token, <<"OTP files">>),
   ?LOG_INFO("OTP indexing complete"),
+  erlsp_report:report(Token, done),
   ok.
 
 -spec otp_erl_files() -> Result when
