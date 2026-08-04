@@ -146,6 +146,18 @@ resolve_call(_AllTokens, [{'(', _}, {atom, _, Attribute}, {'-', _} | _EarlierTok
     when Attribute =:= include; Attribute =:= include_lib ->
   %% Cursor on the header path string itself.
   resolve_include(Uri, HeaderPath);
+resolve_call(_AllTokens, [{'fun', _} | _EarlierTokens],
+             [{atom, _, Module}, {':', _}, {atom, _, Function}, {'/', _}, {integer, _, Arity} | _Rest], _Uri) ->
+  %% Cursor on the Mod part of fun Mod:Fun/Arity.
+  resolve_remote_function_or_type(Module, Function, Arity);
+resolve_call(_AllTokens, [{':', _}, {atom, _, Module}, {'fun', _} | _EarlierTokens],
+             [{atom, _, Function}, {'/', _}, {integer, _, Arity} | _Rest], _Uri) ->
+  %% Cursor on the Fun part of fun Mod:Fun/Arity.
+  resolve_remote_function_or_type(Module, Function, Arity);
+resolve_call(AllTokens, [{'fun', _} | _EarlierTokens],
+             [{atom, _, Name}, {'/', _}, {integer, _, Arity} | _Rest], Uri) ->
+  %% Cursor on Name in a bare fun Name/Arity reference (local function).
+  resolve_local_bif_or_type(AllTokens, Uri, Name, Arity);
 resolve_call(AllTokens, ReverseBefore, [{atom, _, Name}, {'/', _}, {integer, _, Arity} | _Rest], _Uri) ->
   %% Cursor on Name in a Name/Arity entry, e.g. inside -export([...]) or
   %% -export_type([...]) - only meaningful within one of those attribute

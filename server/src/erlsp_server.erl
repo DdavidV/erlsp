@@ -155,9 +155,12 @@ handle_job_result(erlsp_diag_compiler, Uri, Diagnostics, State) ->
   publish_diagnostics(Uri, Diagnostics),
   State;
 handle_job_result(erlsp_index_job, Uri, ok, State) ->
-  Jobs = start_job(Uri, erlsp_index_otp_job, State#state.jobs),
+  Jobs0 = start_job(Uri, erlsp_index_otp_job, State#state.jobs),
+  Jobs = start_job(Uri, erlsp_index_deps_job, Jobs0),
   State#state{jobs = Jobs};
 handle_job_result(erlsp_index_otp_job, _Uri, ok, State) ->
+  State;
+handle_job_result(erlsp_index_deps_job, _Uri, ok, State) ->
   State;
 handle_job_result(erlsp_index_file_job, _Uri, ok, State) ->
   State.

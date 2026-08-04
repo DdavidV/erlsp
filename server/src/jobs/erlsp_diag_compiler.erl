@@ -39,7 +39,9 @@ run(Uri) ->
   Path :: file:filename(),
   Result :: [erlsp_job:diagnostic()].
 compile_diagnostics(Path) ->
-  IncludeOptions = [{i, IncludeDir} || IncludeDir <- erlsp_config:include_paths()],
+  ProjectRoot = erlsp_config:project_root_for_path(Path),
+  IncludeOptions =
+    [{i, IncludeDir} || IncludeDir <- erlsp_config:include_paths_for_root(ProjectRoot)],
   Options = [basic_validation, return_errors, return_warnings | IncludeOptions],
   {_, Errors, Warnings} = compile:file(Path, Options),
   ErrorDiagnostics = file_infos_to_diagnostics(Errors, ?DIAGNOSTIC_SEVERITY_ERROR),

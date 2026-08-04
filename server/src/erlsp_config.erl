@@ -17,9 +17,12 @@
 -export([
   init_workspace/1,
   root_path/0,
-  app_root_path/0,
-  include_paths/0,
-  build_tools/0
+  project_roots/0,
+  project_root_for_path/1,
+  include_paths_for_root/1,
+  source_dirs_for_root/1,
+  dep_source_dirs_for_root/1,
+  build_tools_for_root/1
 ]).
 
 -export_type([
@@ -42,22 +45,15 @@ init(_InitArgs) ->
 
 %% Resolves the initialize request's rootUri to a local workspace root
 %% (rootUri may be null per the LSP spec, when no folder is open, in
-%% which case the current working directory is used), then finds the actual
-%% OTP app root, detects which build tool(s) it uses, and precomputes
-%% the include search paths every diagnostics job should use.
-%% Stores all of it for the rest of the session. Meant to be called
-%% once, from the initialize request.
+%% which case the current working directory is used) and stores it.
+%% Unlike a single app root, individual project roots (and their include
+%% paths) are discovered lazily and cached, per file, via project_root_for_path/1.
 -spec init_workspace(RootUri) -> Result when
   RootUri :: erlsp_documents:uri() | null,
   Result :: ok.
 init_workspace(RootUri) ->
   RootPath = root_path_from_uri(RootUri),
   true = ets:insert(?MODULE, {root_path, RootPath}),
-  AppRootPath = find_app_root(RootPath),
-  true = ets:insert(?MODULE, {app_root_path, AppRootPath}),
-  true = ets:insert(?MODULE, {build_tools, detect_build_tools(AppRootPath)}),
-  IncludePaths = resolve_paths(AppRootPath, include_dirs()),
-  true = ets:insert(?MODULE, {include_paths, IncludePaths}),
   ok.
 
 -spec root_path_from_uri(RootUri) -> Result when
@@ -69,29 +65,88 @@ root_path_from_uri(null) ->
 root_path_from_uri(RootUri) ->
   erlsp_uri:to_path(RootUri).
 
-%% A rebar3/Mix project's build config normally sits at the LSP
-%% workspace root, but a monorepo (e.g. erlsp itself: client/ + server/
-%% as siblings under the repo root, with rebar.config only inside
-%% server/) breaks that assumption. If RootPath itself has no
-%% rebar.config/mix.exs, scan its immediate subdirectories for one and
-%% use whichever is found first as the real app root; falls back to
-%% RootPath unchanged if none is found anywhere.
--spec find_app_root(RootPath) -> Result when
-  RootPath :: file:filename(),
-  Result :: file:filename().
-find_app_root(RootPath) ->
-  case has_build_config(RootPath) of
-    true ->
-      RootPath;
-    false ->
+-spec root_path() -> Result when
+  Result :: file:filename() | undefined.
+root_path() ->
+  case ets:lookup(?MODULE, root_path) of
+    [{root_path, RootPath}] -> RootPath;
+    [] -> undefined
+  end.
+
+%% Every distinct project root found under the workspace root, i.e. every
+%% directory (searched recursively) that itself contains a
+%% rebar.config/mix.exs.
+-spec project_roots() -> Result when
+  Result :: [file:filename()].
+project_roots() ->
+  case root_path() of
+    undefined ->
+      [];
+    RootPath ->
+      case has_build_config(RootPath) of
+        true -> [RootPath];
+        false -> find_build_config_dirs(RootPath)
+      end
+  end.
+
+-spec find_build_config_dirs(Dir) -> Result when
+  Dir :: file:filename(),
+  Result :: [file:filename()].
+find_build_config_dirs(Dir) ->
+  case filename:basename(Dir) of
+    "_build" ->
+      [];
+    _Basename ->
       Subdirs = [
         Path
-      || Path <- filelib:wildcard(filename:join(RootPath, "*")),
+      || Path <- filelib:wildcard(filename:join(Dir, "*")),
          filelib:is_dir(Path)
       ],
-      case lists:search(fun has_build_config/1, Subdirs) of
-        {value, AppRoot} -> AppRoot;
-        false -> RootPath
+      {WithConfig, WithoutConfig} = lists:partition(fun has_build_config/1, Subdirs),
+      WithConfig ++ lists:append([find_build_config_dirs(Subdir) || Subdir <- WithoutConfig])
+  end.
+
+%% The nearest ancestor of Path (a file or directory) that contains a
+%% rebar.config/mix.exs, mirroring how rebar3/Mix themselves resolve
+%% which project a file belongs to. Falls back to the workspace root if
+%% no ancestor has one (e.g. a loose .erl file with no build config at
+%% all). Cached per resolved starting directory, since this walk happens
+%% on every index/diagnostics job for every file.
+-spec project_root_for_path(Path) -> Result when
+  Path :: file:filename(),
+  Result :: file:filename().
+project_root_for_path(Path) ->
+  StartDir = case filelib:is_dir(Path) of
+    true -> filename:absname(Path);
+    false -> filename:dirname(filename:absname(Path))
+  end,
+  case ets:lookup(?MODULE, {project_root, StartDir}) of
+    [{{project_root, StartDir}, ProjectRoot}] ->
+      ProjectRoot;
+    [] ->
+      ProjectRoot = discover_project_root(StartDir),
+      true = ets:insert(?MODULE, {{project_root, StartDir}, ProjectRoot}),
+      ProjectRoot
+  end.
+
+-spec discover_project_root(Dir) -> Result when
+  Dir :: file:filename(),
+  Result :: file:filename().
+discover_project_root(Dir) ->
+  case has_build_config(Dir) of
+    true ->
+      Dir;
+    false ->
+      Parent = filename:dirname(Dir),
+      case Parent =:= Dir of
+        true ->
+          %% Reached the filesystem root without finding one.
+          case root_path() of
+            undefined -> Dir;
+            RootPath -> RootPath
+          end;
+        false ->
+          discover_project_root(Parent)
       end
   end.
 
@@ -102,49 +157,67 @@ has_build_config(Path) ->
   filelib:is_file(filename:join(Path, "rebar.config")) orelse
     filelib:is_file(filename:join(Path, "mix.exs")).
 
--spec root_path() -> Result when
-  Result :: file:filename() | undefined.
-root_path() ->
-  case ets:lookup(?MODULE, root_path) of
-    [{root_path, RootPath}] -> RootPath;
-    [] -> undefined
-  end.
-
--spec app_root_path() -> Result when
-  Result :: file:filename() | undefined.
-app_root_path() ->
-  case ets:lookup(?MODULE, app_root_path) of
-    [{app_root_path, AppRootPath}] -> AppRootPath;
-    [] -> undefined
-  end.
-
--spec include_paths() -> Result when
+-spec include_paths_for_root(ProjectRoot) -> Result when
+  ProjectRoot :: file:filename(),
   Result :: [file:filename()].
-include_paths() ->
-  case ets:lookup(?MODULE, include_paths) of
-    [{include_paths, IncludePaths}] -> IncludePaths;
-    [] -> []
+include_paths_for_root(ProjectRoot) ->
+  case ets:lookup(?MODULE, {include_paths, ProjectRoot}) of
+    [{{include_paths, ProjectRoot}, IncludePaths}] ->
+      IncludePaths;
+    [] ->
+      IncludePaths = resolve_paths(ProjectRoot, include_dirs()),
+      true = ets:insert(?MODULE, {{include_paths, ProjectRoot}, IncludePaths}),
+      IncludePaths
   end.
 
--spec build_tools() -> Result when
+-spec source_dirs_for_root(ProjectRoot) -> Result when
+  ProjectRoot :: file:filename(),
+  Result :: [file:filename()].
+source_dirs_for_root(ProjectRoot) ->
+  resolve_paths(ProjectRoot, ["src", "apps/*/src"]).
+
+-spec dep_source_dirs_for_root(ProjectRoot) -> Result when
+  ProjectRoot :: file:filename(),
+  Result :: [file:filename()].
+dep_source_dirs_for_root(ProjectRoot) ->
+  OwnAppNames = own_app_names(ProjectRoot),
+  BuildLibDirs = filelib:wildcard(filename:join(ProjectRoot, "_build/*/lib/*")),
+  [filename:join(Dir, "src")
+  || Dir <- BuildLibDirs,
+     filelib:is_dir(filename:join(Dir, "src")),
+     not lists:member(filename:basename(Dir), OwnAppNames)].
+
+-spec own_app_names(ProjectRoot) -> Result when
+  ProjectRoot :: file:filename(),
+  Result :: [file:filename()].
+own_app_names(ProjectRoot) ->
+  AppSrcFiles = filelib:wildcard(filename:join(ProjectRoot, "src/*.app.src")) ++
+    filelib:wildcard(filename:join(ProjectRoot, "apps/*/src/*.app.src")),
+  [filename:basename(AppSrcFile, ".app.src") || AppSrcFile <- AppSrcFiles].
+
+-spec build_tools_for_root(ProjectRoot) -> Result when
+  ProjectRoot :: file:filename(),
   Result :: [build_tool()].
-build_tools() ->
-  case ets:lookup(?MODULE, build_tools) of
-    [{build_tools, BuildTools}] -> BuildTools;
-    [] -> []
+build_tools_for_root(ProjectRoot) ->
+  case ets:lookup(?MODULE, {build_tools, ProjectRoot}) of
+    [{{build_tools, ProjectRoot}, BuildTools}] ->
+      BuildTools;
+    [] ->
+      BuildTools = detect_build_tools(ProjectRoot),
+      true = ets:insert(?MODULE, {{build_tools, ProjectRoot}, BuildTools}),
+      BuildTools
   end.
 
-%% Which build tool config files are present at the app root.
--spec detect_build_tools(RootPath) -> Result when
-  RootPath :: file:filename(),
+-spec detect_build_tools(ProjectRoot) -> Result when
+  ProjectRoot :: file:filename(),
   Result :: [build_tool()].
-detect_build_tools(RootPath) ->
+detect_build_tools(ProjectRoot) ->
   Candidates = [
     {rebar3, "rebar.config"},
     {mix, "mix.exs"}
   ],
   [BuildTool || {BuildTool, ConfigFile} <- Candidates,
-   filelib:is_file(filename:join(RootPath, ConfigFile))].
+   filelib:is_file(filename:join(ProjectRoot, ConfigFile))].
 
 %% Tried unconditionally, regardless of which build tool(s) were
 %% detected: rebar3 and Mix's own Erlang compiler task both default to
