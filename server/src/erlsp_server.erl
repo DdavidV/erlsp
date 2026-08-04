@@ -187,7 +187,8 @@ handle_message(#{id := Id, method := <<"initialize">>, params := Params}, State)
       change => ?TEXT_DOCUMENT_SYNC_FULL,
       save => #{includeText => false}
     },
-    definitionProvider => true
+    definitionProvider => true,
+    completionProvider => #{triggerCharacters => [<<":">>, <<"?">>, <<"#">>]}
   },
   erlsp_io:send(erlsp_jsonrpc:reply(Id, #{capabilities => Capabilities})),
   Jobs = start_job(RootUri, erlsp_index_job, State#state.jobs),
@@ -226,6 +227,11 @@ handle_message(#{id := Id, method := <<"textDocument/definition">>, params := Pa
       null
   end,
   erlsp_io:send(erlsp_jsonrpc:reply(Id, Result)),
+  State;
+handle_message(#{id := Id, method := <<"textDocument/completion">>, params := Params}, State) ->
+  #{textDocument := #{uri := Uri}, position := #{line := Line, character := Character}} = Params,
+  Items = erlsp_completion:complete(Uri, Line, Character),
+  erlsp_io:send(erlsp_jsonrpc:reply(Id, Items)),
   State;
 handle_message(#{id := Id, method := Method}, State) ->
   ?LOG_WARNING("method not found: ~s", [Method]),

@@ -1,5 +1,10 @@
 # erlsp
 
+> **Early-stage project.** erlsp is under active development and not yet feature-complete.
+Expect bugs, missing functionality, and breaking changes between commits.
+Not currently recommended for production or daily-driver use. Testing has been manual so far,
+and the codebase is a little messy in places as a result.
+
 Erlang language server (`server/`, escript-based) and its VS Code extension client (`client/`).
 
 Inspired by [`erlang_ls`](https://github.com/erlang-ls/erlang_ls) and [`elp`](https://github.com/WhatsApp/erlang-language-platform) (Erlang Language Platform),

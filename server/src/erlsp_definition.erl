@@ -223,7 +223,7 @@ enclosing_export_attribute(_ReverseBefore) ->
   Arity :: arity(),
   Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
 resolve_own_function(Tokens, Name, Arity) ->
-  case module_attribute(Tokens) of
+  case erlsp_tokens:module_attribute(Tokens) of
     {ok, Module} -> erlsp_index:function_location(Module, Name, Arity);
     error -> error
   end.
@@ -236,7 +236,7 @@ resolve_own_function(Tokens, Name, Arity) ->
   Arity :: arity(),
   Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
 resolve_own_type(Tokens, Name, Arity) ->
-  case module_attribute(Tokens) of
+  case erlsp_tokens:module_attribute(Tokens) of
     {ok, Module} -> erlsp_index:type_location(Module, Name, Arity);
     error -> error
   end.
@@ -312,7 +312,7 @@ resolve_remote_function_or_type(Module, Name, Arity) ->
   Arity :: arity(),
   Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
 resolve_local_bif_or_type(Tokens, _Uri, Name, Arity) ->
-  case module_attribute(Tokens) of
+  case erlsp_tokens:module_attribute(Tokens) of
     {ok, Module} ->
       case erlsp_index:function_location(Module, Name, Arity) of
         {ok, Location} -> {ok, Location};
@@ -378,17 +378,7 @@ first_macro_location([], _Macro) ->
   Record :: atom(),
   Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
 resolve_record(Tokens, _Uri, Record) ->
-  case module_attribute(Tokens) of
+  case erlsp_tokens:module_attribute(Tokens) of
     {ok, Module} -> erlsp_index:record_location(Module, Record);
     error -> error
   end.
-
--spec module_attribute(Tokens) -> Result when
-  Tokens :: [erl_scan:token()],
-  Result :: {ok, module()} | error.
-module_attribute([{'-', _}, {atom, _, module}, {'(', _}, {atom, _, Module}, {')', _} | _Rest]) ->
-  {ok, Module};
-module_attribute([_Token | Rest]) ->
-  module_attribute(Rest);
-module_attribute([]) ->
-  error.

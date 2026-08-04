@@ -26,10 +26,16 @@
   index_files/3,
   module_location/1,
   function_location/3,
+  function_param_names/3,
   type_location/3,
   record_location/2,
   macro_location/2,
-  included_uris/1
+  included_uris/1,
+  functions_in_module/1,
+  types_in_module/1,
+  records_in_module/1,
+  macros_in_uri/1,
+  all_modules/0
 ]).
 
 -spec start_link() -> Result when
@@ -171,8 +177,9 @@ index_forms(Uri, Forms) ->
   Result :: ok.
 index_forms(Uri, _FormUri, Module, [{attribute, _Line, file, {OtherPath, _FileLine}} | Rest]) ->
   index_forms(Uri, erlsp_uri:from_path(OtherPath), Module, Rest);
-index_forms(Uri, FormUri, Module, [{function, FunLine, Name, Arity, _Clauses} | Rest]) ->
-  ets:insert(?FUNCTIONS_TABLE, {{Module, Name, Arity}, FormUri, anno_line(FunLine)}),
+index_forms(Uri, FormUri, Module, [{function, FunLine, Name, Arity, Clauses} | Rest]) ->
+  ParamNames = clause_param_names(Clauses),
+  ets:insert(?FUNCTIONS_TABLE, {{Module, Name, Arity}, FormUri, anno_line(FunLine), ParamNames}),
   index_forms(Uri, FormUri, Module, Rest);
 index_forms(Uri, FormUri, Module, [{attribute, TypeLine, Kind, {Name, _TypeDef, Params}} | Rest])
     when Kind =:= type; Kind =:= opaque ->
@@ -185,6 +192,36 @@ index_forms(Uri, FormUri, Module, [_OtherForm | Rest]) ->
   index_forms(Uri, FormUri, Module, Rest);
 index_forms(_Uri, _FormUri, _Module, []) ->
   ok.
+
+%% Parameter names for a function's first clause (arbitrarily but
+%% consistently - a function's clauses almost always name their
+%% parameters the same way anyway), for building a completion snippet
+%% with real argument names instead of just "Arg1, Arg2, ...". A
+%% parameter that isn't a plain variable pattern (destructuring, a
+%% literal, a bare "_") has no single meaningful name, so it falls back
+%% to "ArgN" (1-indexed) instead.
+-spec clause_param_names(Clauses) -> Result when
+  Clauses :: [erl_parse:abstract_clause()],
+  Result :: [binary()].
+clause_param_names([{clause, _Line, Patterns, _Guards, _Body} | _OtherClauses]) ->
+  [param_name(Pattern, Index) || {Pattern, Index} <- lists:zip(Patterns, lists:seq(1, length(Patterns)))];
+clause_param_names([]) ->
+  [].
+
+-spec param_name(Pattern, Index) -> Result when
+  Pattern :: erl_parse:abstract_expr(),
+  Index :: pos_integer(),
+  Result :: binary().
+param_name({var, _Anno, Name}, _Index) when Name =/= '_' ->
+  %% A leading underscore (e.g. _Args) marks an intentionally-unused
+  %% parameter by convention, not part of the name itself.
+  NameString = atom_to_list(Name),
+  case NameString of
+    [$_ | Rest] when Rest =/= [] -> unicode:characters_to_binary(Rest);
+    _ -> unicode:characters_to_binary(NameString)
+  end;
+param_name(_Pattern, Index) ->
+  unicode:characters_to_binary(io_lib:format("Arg~b", [Index])).
 
 %% Macros aren't preserved in Forms), so Uri's own raw text is tokenized directly.
 %% Keyed by Uri (the file the -define actually appears in, whether an
@@ -244,6 +281,12 @@ module_location(Module) ->
     [] -> error
   end.
 
+%% Every indexed module's name, in no particular order.
+-spec all_modules() -> Result when
+  Result :: [module()].
+all_modules() ->
+  [Module || {Module, _Uri, _Line} <- ets:tab2list(?MODULES_TABLE)].
+
 -spec function_location(Module, Function, Arity) -> Result when
   Module :: module(),
   Function :: atom(),
@@ -251,7 +294,21 @@ module_location(Module) ->
   Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
 function_location(Module, Function, Arity) ->
   case ets:lookup(?FUNCTIONS_TABLE, {Module, Function, Arity}) of
-    [{{Module, Function, Arity}, Uri, Line}] -> {ok, {Uri, Line}};
+    [{{Module, Function, Arity}, Uri, Line, _ParamNames}] -> {ok, {Uri, Line}};
+    [] -> error
+  end.
+
+%% Function's first clause's parameter names, e.g. [<<"Args">>] for
+%% main(_Args)/1 - see clause_param_names/1 for how a parameter that
+%% isn't a plain variable pattern gets a generic "ArgN" name instead.
+-spec function_param_names(Module, Function, Arity) -> Result when
+  Module :: module(),
+  Function :: atom(),
+  Arity :: arity(),
+  Result :: {ok, [binary()]} | error.
+function_param_names(Module, Function, Arity) ->
+  case ets:lookup(?FUNCTIONS_TABLE, {Module, Function, Arity}) of
+    [{{Module, Function, Arity}, _Uri, _Line, ParamNames}] -> {ok, ParamNames};
     [] -> error
   end.
 
@@ -289,6 +346,40 @@ macro_location(Uri, Macro) ->
     [{{Uri, Macro}, Uri, Line}] -> {ok, {Uri, Line}};
     [] -> error
   end.
+
+%% Every {Name, Arity} function defined in Module, in no particular order.
+-spec functions_in_module(Module) -> Result when
+  Module :: module(),
+  Result :: [{atom(), arity()}].
+functions_in_module(Module) ->
+  [{Name, Arity}
+  || {{_Module, Name, Arity}, _Uri, _Line, _ParamNames}
+     <- ets:match_object(?FUNCTIONS_TABLE, {{Module, '_', '_'}, '_', '_', '_'})].
+
+%% Every {Name, Arity} type defined in Module, in no particular order.
+-spec types_in_module(Module) -> Result when
+  Module :: module(),
+  Result :: [{atom(), arity()}].
+types_in_module(Module) ->
+  [{Name, Arity} || {{_Module, Name, Arity}, _Uri, _Line}
+   <- ets:match_object(?TYPES_TABLE, {{Module, '_', '_'}, '_', '_'})].
+
+%% Every record name defined in Module, in no particular order.
+-spec records_in_module(Module) -> Result when
+  Module :: module(),
+  Result :: [atom()].
+records_in_module(Module) ->
+  [Name || {{_Module, Name}, _Uri, _Line}
+   <- ets:match_object(?RECORDS_TABLE, {{Module, '_'}, '_', '_'})].
+
+%% Every macro name defined directly in Uri (not any header it includes -
+%% see macros_visible/1 in erlsp_completion for the transitive version).
+-spec macros_in_uri(Uri) -> Result when
+  Uri :: erlsp_documents:uri(),
+  Result :: [atom()].
+macros_in_uri(Uri) ->
+  [Name || {{_Uri, Name}, _DefUri, _Line}
+   <- ets:match_object(?MACROS_TABLE, {{Uri, '_'}, '_', '_'})].
 
 %% The headers Uri transitively -include/-include_libs, in no particular order.
 -spec included_uris(Uri) -> Result when
