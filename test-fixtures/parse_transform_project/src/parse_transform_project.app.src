@@ -1,0 +1,11 @@
+{application, parse_transform_project, [
+  {description, "erlsp fixture: exercises a custom parse_transform"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib
+  ]},
+  {env, []},
+  {modules, []}
+]}.

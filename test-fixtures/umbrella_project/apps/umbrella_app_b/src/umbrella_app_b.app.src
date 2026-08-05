@@ -1,0 +1,11 @@
+{application, umbrella_app_b, [
+  {description, "erlsp fixture: umbrella sub-app B, exercises its own include_lib"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib
+  ]},
+  {env, []},
+  {modules, []}
+]}.

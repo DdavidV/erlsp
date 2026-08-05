@@ -64,6 +64,7 @@ index_file(Path) ->
   IncludeDir = filename:join(filename:dirname(Path), "../include"),
   ProjectRoot = erlsp_config:project_root_for_path(Path),
   IncludePaths = [IncludeDir | erlsp_config:include_paths_for_root(ProjectRoot)],
+  code:add_pathsz(erlsp_config:ebin_paths_for_root(ProjectRoot)),
   case epp:parse_file(Path, [{includes, IncludePaths}]) of
     {ok, Forms} ->
       Uri = erlsp_uri:from_path(Path),

@@ -1,4 +1,4 @@
--module(erlsp_index_job).
+-module(erlsp_index_workspace_job).
 
 -behaviour(erlsp_job).
 

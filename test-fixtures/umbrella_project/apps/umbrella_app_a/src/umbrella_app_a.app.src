@@ -1,0 +1,11 @@
+{application, umbrella_app_a, [
+  {description, "erlsp fixture: umbrella sub-app A"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib
+  ]},
+  {env, []},
+  {modules, []}
+]}.

@@ -11,8 +11,8 @@
 %% Indexes every fetched dependency's source for every project found
 %% under the workspace root, so go-to-definition also works for calls
 %% into a project's own deps, not just its own modules and OTP's.
-%% Deliberately kept separate from erlsp_index_job (workspace) and
-%% erlsp_index_otp_job (OTP) so those stay quick.
+%% Deliberately kept separate from erlsp_index_workspace_job (workspace)
+%% and erlsp_index_otp_job (OTP) so those stay quick.
 -spec run(Uri, Token) -> Result when
   Uri :: erlsp_documents:uri(),
   Token :: erlsp_report:token(),

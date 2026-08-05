@@ -22,6 +22,7 @@
   include_paths_for_root/1,
   source_dirs_for_root/1,
   dep_source_dirs_for_root/1,
+  ebin_paths_for_root/1,
   build_tools_for_root/1
 ]).
 
@@ -165,7 +166,7 @@ include_paths_for_root(ProjectRoot) ->
     [{{include_paths, ProjectRoot}, IncludePaths}] ->
       IncludePaths;
     [] ->
-      IncludePaths = resolve_paths(ProjectRoot, include_dirs()),
+      IncludePaths = resolve_paths(ProjectRoot, include_dirs()) ++ own_app_parent_dirs(ProjectRoot),
       true = ets:insert(?MODULE, {{include_paths, ProjectRoot}, IncludePaths}),
       IncludePaths
   end.
@@ -180,20 +181,71 @@ source_dirs_for_root(ProjectRoot) ->
   ProjectRoot :: file:filename(),
   Result :: [file:filename()].
 dep_source_dirs_for_root(ProjectRoot) ->
-  OwnAppNames = own_app_names(ProjectRoot),
+  OwnAppNames = [atom_to_list(AppName) || AppName <- own_app_names(ProjectRoot)],
   BuildLibDirs = filelib:wildcard(filename:join(ProjectRoot, "_build/*/lib/*")),
   [filename:join(Dir, "src")
   || Dir <- BuildLibDirs,
      filelib:is_dir(filename:join(Dir, "src")),
      not lists:member(filename:basename(Dir), OwnAppNames)].
 
--spec own_app_names(ProjectRoot) -> Result when
+%% Every built app's ebin directory under ProjectRoot's _build/ - own
+%% app(s) and dependencies alike, since code:lib_dir/1 is name-keyed with
+%% no correctness distinction between the two. Used to put a real, already
+%% -built project's compiled modules on a code path so they can actually be loaded,
+%% rather than erlsp only ever seeing source it can't run.
+-spec ebin_paths_for_root(ProjectRoot) -> Result when
   ProjectRoot :: file:filename(),
   Result :: [file:filename()].
+ebin_paths_for_root(ProjectRoot) ->
+  filelib:wildcard(filename:join(ProjectRoot, "_build/*/lib/*/ebin")).
+
+-spec own_app_names(ProjectRoot) -> Result when
+  ProjectRoot :: file:filename(),
+  Result :: [atom()].
 own_app_names(ProjectRoot) ->
-  AppSrcFiles = filelib:wildcard(filename:join(ProjectRoot, "src/*.app.src")) ++
-    filelib:wildcard(filename:join(ProjectRoot, "apps/*/src/*.app.src")),
-  [filename:basename(AppSrcFile, ".app.src") || AppSrcFile <- AppSrcFiles].
+  [AppName || {AppName, _SrcDir} <- own_apps(ProjectRoot)].
+
+%% Every app.src belonging to ProjectRoot itself (not a dependency),
+%% paired with the directory its own src/ lives in - either ProjectRoot
+%% itself (single-app layout) or ProjectRoot/apps/<name> (an umbrella
+%% sub-app).
+-spec own_apps(ProjectRoot) -> Result when
+  ProjectRoot :: file:filename(),
+  Result :: [{atom(), file:filename()}].
+own_apps(ProjectRoot) ->
+  TopLevel = [
+    {list_to_atom(filename:basename(AppSrcFile, ".app.src")), ProjectRoot}
+  || AppSrcFile <- filelib:wildcard(filename:join(ProjectRoot, "src/*.app.src"))
+  ],
+  Umbrella = [
+    {list_to_atom(filename:basename(AppSrcFile, ".app.src")),
+     filename:dirname(filename:dirname(AppSrcFile))}
+  || AppSrcFile <- filelib:wildcard(filename:join(ProjectRoot, "apps/*/src/*.app.src"))
+  ],
+  TopLevel ++ Umbrella.
+
+%% For each of ProjectRoot's own apps whose source directory's basename
+%% matches the app's own name, the parent of that source directory - e.g.
+%% for a single-app project rooted at ".../myapp" with app name myapp,
+%% this adds ".../" (myapp's parent); for an umbrella sub-app at
+%% ".../apps/myapp" with app name myapp, this adds ".../apps/".
+%%
+%% Lets epp's own -include_lib("myapp/include/foo.hrl") resolution
+%% succeed for a project's own (non-dependency) headers before any real
+%% build exists, i.e. before ebin_paths_for_root/1 has anything to offer
+%% code:lib_dir/1. Only ever adds ProjectRoot's own ancestor directories,
+%% never an arbitrary path, so this introduces no new false-positive
+%% match surface - it only works when the directory-name-matches-app-name
+%% coincidence holds, which is common but not guaranteed.
+-spec own_app_parent_dirs(ProjectRoot) -> Result when
+  ProjectRoot :: file:filename(),
+  Result :: [file:filename()].
+own_app_parent_dirs(ProjectRoot) ->
+  lists:usort([
+    filename:dirname(SrcDir)
+  || {AppName, SrcDir} <- own_apps(ProjectRoot),
+     atom_to_list(AppName) =:= filename:basename(SrcDir)
+  ]).
 
 -spec build_tools_for_root(ProjectRoot) -> Result when
   ProjectRoot :: file:filename(),

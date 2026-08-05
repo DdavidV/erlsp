@@ -2,6 +2,10 @@
 server/_build/
 server/rebar3.crashdump
 
+# test fixture projects (rebar3)
+test-fixtures/**/_build/
+test-fixtures/**/rebar3.crashdump
+
 # client (node)
 client/node_modules/
 client/out/

@@ -1,0 +1,1 @@
+-define(UMBRELLA_B_MACRO, umbrella_b_value).

@@ -1,0 +1,11 @@
+{application, include_lib_project, [
+  {description, "erlsp fixture: exercises -include_lib for its own headers"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib
+  ]},
+  {env, []},
+  {modules, []}
+]}.

@@ -154,10 +154,8 @@ handle_job_result(JobModule, Uri, {job_crashed, Class, Reason, Stacktrace}, Stat
 handle_job_result(erlsp_diag_compiler, Uri, Diagnostics, State) ->
   publish_diagnostics(Uri, Diagnostics),
   State;
-handle_job_result(erlsp_index_job, Uri, ok, State) ->
-  Jobs0 = start_job(Uri, erlsp_index_otp_job, State#state.jobs),
-  Jobs = start_job(Uri, erlsp_index_deps_job, Jobs0),
-  State#state{jobs = Jobs};
+handle_job_result(erlsp_index_workspace_job, _Uri, ok, State) ->
+  State;
 handle_job_result(erlsp_index_otp_job, _Uri, ok, State) ->
   State;
 handle_job_result(erlsp_index_deps_job, _Uri, ok, State) ->
@@ -191,7 +189,9 @@ handle_message(#{id := Id, method := <<"initialize">>, params := Params}, State)
     completionProvider => #{triggerCharacters => [<<":">>, <<"?">>, <<"#">>]}
   },
   erlsp_io:send(erlsp_jsonrpc:reply(Id, #{capabilities => Capabilities})),
-  Jobs = start_job(RootUri, erlsp_index_job, State#state.jobs),
+  Jobs0 = start_job(RootUri, erlsp_index_workspace_job, State#state.jobs),
+  Jobs1 = start_job(RootUri, erlsp_index_otp_job, Jobs0),
+  Jobs = start_job(RootUri, erlsp_index_deps_job, Jobs1),
   State#state{jobs = Jobs};
 handle_message(#{id := Id, method := <<"shutdown">>}, State) ->
   erlsp_io:send(erlsp_jsonrpc:reply(Id, null)),
