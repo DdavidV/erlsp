@@ -37,7 +37,7 @@ file_text(Uri) ->
     {ok, Text} ->
       {ok, Text};
     error ->
-      case file:read_file(erlsp_uri:to_path(Uri)) of
+      case file:read_file(erlsp_utils:uri_to_path(Uri)) of
         {ok, Bytes} -> {ok, Bytes};
         {error, _Reason} -> error
       end
@@ -223,7 +223,7 @@ enclosing_export_attribute(_ReverseBefore) ->
   Arity :: arity(),
   Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
 resolve_own_function(Tokens, Name, Arity) ->
-  case erlsp_tokens:module_attribute(Tokens) of
+  case erlsp_utils:module_attribute(Tokens) of
     {ok, Module} -> erlsp_index:function_location(Module, Name, Arity);
     error -> error
   end.
@@ -236,7 +236,7 @@ resolve_own_function(Tokens, Name, Arity) ->
   Arity :: arity(),
   Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
 resolve_own_type(Tokens, Name, Arity) ->
-  case erlsp_tokens:module_attribute(Tokens) of
+  case erlsp_utils:module_attribute(Tokens) of
     {ok, Module} -> erlsp_index:type_location(Module, Name, Arity);
     error -> error
   end.
@@ -312,7 +312,7 @@ resolve_remote_function_or_type(Module, Name, Arity) ->
   Arity :: arity(),
   Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
 resolve_local_bif_or_type(Tokens, _Uri, Name, Arity) ->
-  case erlsp_tokens:module_attribute(Tokens) of
+  case erlsp_utils:module_attribute(Tokens) of
     {ok, Module} ->
       case erlsp_index:function_location(Module, Name, Arity) of
         {ok, Location} -> {ok, Location};
@@ -378,7 +378,7 @@ first_macro_location([], _Macro) ->
   Record :: atom(),
   Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
 resolve_record(Tokens, _Uri, Record) ->
-  case erlsp_tokens:module_attribute(Tokens) of
+  case erlsp_utils:module_attribute(Tokens) of
     {ok, Module} -> erlsp_index:record_location(Module, Record);
     error -> error
   end.

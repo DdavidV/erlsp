@@ -12,5 +12,5 @@
   Uri :: erlsp_documents:uri(),
   Result :: ok.
 run(Uri) ->
-  Path = erlsp_uri:to_path(Uri),
+  Path = erlsp_utils:uri_to_path(Uri),
   erlsp_index:index_file(Path).

@@ -64,7 +64,7 @@ root_path_from_uri(null) ->
   {ok, Cwd} = file:get_cwd(),
   Cwd;
 root_path_from_uri(RootUri) ->
-  erlsp_uri:to_path(RootUri).
+  erlsp_utils:uri_to_path(RootUri).
 
 -spec root_path() -> Result when
   Result :: file:filename() | undefined.

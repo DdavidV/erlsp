@@ -21,7 +21,7 @@
   Uri :: erlsp_documents:uri(),
   Result :: [erlsp_job:diagnostic()].
 run(Uri) ->
-  Path = erlsp_uri:to_path(Uri),
+  Path = erlsp_utils:uri_to_path(Uri),
   case {erlsp_config:root_path(), filename:extension(Path)} of
     {undefined, _} ->
       %% initialize hasn't set up the workspace's include paths yet:

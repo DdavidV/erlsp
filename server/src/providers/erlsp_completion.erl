@@ -46,7 +46,7 @@ file_text(Uri) ->
     {ok, Text} ->
       {ok, Text};
     error ->
-      case file:read_file(erlsp_uri:to_path(Uri)) of
+      case file:read_file(erlsp_utils:uri_to_path(Uri)) of
         {ok, Bytes} -> {ok, Bytes};
         {error, _Reason} -> error
       end
@@ -128,7 +128,7 @@ resolve_context(_ReverseTokens, _Uri) ->
   ReverseTokens :: [erl_scan:token()],
   Result :: module() | undefined.
 module_of(ReverseTokens) ->
-  case erlsp_tokens:module_attribute(lists:reverse(ReverseTokens)) of
+  case erlsp_utils:module_attribute(lists:reverse(ReverseTokens)) of
     {ok, Module} -> Module;
     error -> undefined
   end.

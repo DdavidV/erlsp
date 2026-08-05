@@ -67,7 +67,7 @@ index_file(Path) ->
   code:add_pathsz(erlsp_config:ebin_paths_for_root(ProjectRoot)),
   case epp:parse_file(Path, [{includes, IncludePaths}]) of
     {ok, Forms} ->
-      Uri = erlsp_uri:from_path(Path),
+      Uri = erlsp_utils:path_to_uri(Path),
       index_forms(Uri, Forms),
       IncludedPaths = included_paths(Path, Forms),
       IncludedUris = [index_header(HeaderPath) || HeaderPath <- IncludedPaths],
@@ -152,7 +152,7 @@ included_paths(Path, Forms) ->
   HeaderPath :: file:filename(),
   Result :: erlsp_documents:uri().
 index_header(HeaderPath) ->
-  Uri = erlsp_uri:from_path(HeaderPath),
+  Uri = erlsp_utils:path_to_uri(HeaderPath),
   index_macros(Uri, HeaderPath),
   Uri.
 
@@ -177,7 +177,7 @@ index_forms(Uri, Forms) ->
   Forms :: [erl_parse:abstract_form()],
   Result :: ok.
 index_forms(Uri, _FormUri, Module, [{attribute, _Line, file, {OtherPath, _FileLine}} | Rest]) ->
-  index_forms(Uri, erlsp_uri:from_path(OtherPath), Module, Rest);
+  index_forms(Uri, erlsp_utils:path_to_uri(OtherPath), Module, Rest);
 index_forms(Uri, FormUri, Module, [{function, FunLine, Name, Arity, Clauses} | Rest]) ->
   ParamNames = clause_param_names(Clauses),
   ets:insert(?FUNCTIONS_TABLE, {{Module, Name, Arity}, FormUri, anno_line(FunLine), ParamNames}),
