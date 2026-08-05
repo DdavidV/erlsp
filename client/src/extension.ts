@@ -1,4 +1,3 @@
-import * as cp from "child_process";
 import * as path from "path";
 import * as vscode from "vscode";
 import {
@@ -15,11 +14,11 @@ export function activate(context: vscode.ExtensionContext): void {
   const serverPath =
     configuredPath && configuredPath.length > 0
       ? configuredPath
-      : path.join(context.extensionPath, "server", "erlsp");
+      : path.join(context.extensionPath, "server", "erlsp", "bin", "erlsp");
 
   const serverOptions: ServerOptions = {
-    command: "escript",
-    args: [serverPath],
+    command: serverPath,
+    args: ["-noshell"],
     transport: 0, // stdio
   };
 
@@ -34,27 +33,19 @@ export function activate(context: vscode.ExtensionContext): void {
     clientOptions
   );
 
-  cp.execFile("escript", [], (err: cp.ExecFileException | null) => {
-    if (err && err.code === "ENOENT") {
-      vscode.window.showErrorMessage(
-        `erlsp: "escript" was not found on PATH. The language server cannot start.`
+  client
+    .start()
+    .then(() => {
+      vscode.window.setStatusBarMessage("erlsp: server started", 5000);
+      client?.outputChannel.appendLine(
+        `erlsp: server started (${serverPath})`
       );
-      return;
-    }
-    client
-      ?.start()
-      .then(() => {
-        vscode.window.setStatusBarMessage("erlsp: server started", 5000);
-        client?.outputChannel.appendLine(
-          `erlsp: server started (${serverPath})`
-        );
-      })
-      .catch((startErr) => {
-        vscode.window.showErrorMessage(
-          `erlsp: failed to start server: ${startErr}`
-        );
-      });
-  });
+    })
+    .catch((startErr) => {
+      vscode.window.showErrorMessage(
+        `erlsp: failed to start server: ${startErr}`
+      );
+    });
 }
 
 export function deactivate(): Thenable<void> | undefined {

@@ -82,11 +82,17 @@ handle_info(Info, State) ->
   ?LOG_WARNING("unexpected message: ~p", [Info]),
   {noreply, State}.
 
+%% A normal termination means the client closed stdin or asked for a clean shutdown/exit. 
+%% Either way the LSP session is over, so the whole VM should stop rather than let the
+%% supervisor restart this permanent child.
 -spec terminate(Reason, State) -> Result when
   Reason :: term(),
   State :: state(),
   Result :: ok.
-terminate(_Reason, _State) ->
+terminate(normal, _State) ->
+  init:stop();
+terminate(Reason, _State) ->
+  ?LOG_ERROR("erlsp_server terminating abnormally: ~p", [Reason]),
   ok.
 
 %% Removes JobModule's slot for Uri from Jobs, cleaning up the outer Uri

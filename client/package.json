@@ -54,7 +54,7 @@
         "erlsp.serverPath": {
           "type": "string",
           "default": "",
-          "description": "Path to the erlsp escript. If empty, the bundled server is used."
+          "description": "Path to the erlsp server executable (bin/erlsp from a built release). If empty, the bundled server is used."
         }
       }
     }

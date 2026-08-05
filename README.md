@@ -5,16 +5,23 @@ Expect bugs, missing functionality, and breaking changes between commits.
 Not currently recommended for production or daily-driver use. Testing has been manual so far,
 and the codebase is a little messy in places as a result.
 
-Erlang language server (`server/`, escript-based) and its VS Code extension client (`client/`).
+Erlang language server (`server/`, shipped as a self-contained OTP release with bundled ERTS) and its VS Code extension client (`client/`).
 
 Inspired by [`erlang_ls`](https://github.com/erlang-ls/erlang_ls) and [`elp`](https://github.com/WhatsApp/erlang-language-platform) (Erlang Language Platform),
 two existing Erlang language servers whose design choices (and tradeoffs) informed several architectural decisions here.
 
 ## Requirements
 
+To build erlsp from source:
+
 - Erlang/OTP 28.2
 - rebar3 3.27.0
 - Node.js 24.18.1
+
+erlsp's own server ships with a bundled ERTS, so a built/packaged extension
+has no runtime dependency on the host having Erlang installed. Compiling the
+*user's own project* for diagnostics still uses the host's `erl` when
+available, falling back to erlsp's bundled runtime otherwise.
 
 ## Setup
 
@@ -32,7 +39,7 @@ cd client && npm run compile
 
 ## Package the extension
 
-Builds the server escript and produces a `.vsix` at `package/erlsp-<version>.vsix`:
+Builds the server release and produces a `.vsix` at `package/erlsp-<version>.vsix`:
 
 ```sh
 ./scripts/package.sh
