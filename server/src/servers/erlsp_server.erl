@@ -12,6 +12,12 @@
 
 -type state() :: #state{}.
 
+-define(IS_INDEX_JOB(JobModule),
+  JobModule == erlsp_index_workspace_job orelse
+  JobModule == erlsp_index_otp_job orelse
+  JobModule == erlsp_index_deps_job orelse
+  JobModule == erlsp_index_file_job).
+
 -export([
   start_link/0,
   init/1,
@@ -154,13 +160,7 @@ handle_job_result(JobModule, Uri, {job_crashed, Class, Reason, Stacktrace}, Stat
 handle_job_result(erlsp_diag_compiler, Uri, Diagnostics, State) ->
   publish_diagnostics(Uri, Diagnostics),
   State;
-handle_job_result(erlsp_index_workspace_job, _Uri, ok, State) ->
-  State;
-handle_job_result(erlsp_index_otp_job, _Uri, ok, State) ->
-  State;
-handle_job_result(erlsp_index_deps_job, _Uri, ok, State) ->
-  State;
-handle_job_result(erlsp_index_file_job, _Uri, ok, State) ->
+handle_job_result(JobModule, _Uri, ok, State) when ?IS_INDEX_JOB(JobModule) ->
   State.
 
 -spec publish_diagnostics(Uri, Diagnostics) -> Result when
@@ -189,9 +189,16 @@ handle_message(#{id := Id, method := <<"initialize">>, params := Params}, State)
     completionProvider => #{triggerCharacters => [<<":">>, <<"?">>, <<"#">>]}
   },
   erlsp_io:send(erlsp_jsonrpc:reply(Id, #{capabilities => Capabilities})),
-  Jobs0 = start_job(RootUri, erlsp_index_workspace_job, State#state.jobs),
-  Jobs1 = start_job(RootUri, erlsp_index_otp_job, Jobs0),
-  Jobs = start_job(RootUri, erlsp_index_deps_job, Jobs1),
+  JobsToStart = [
+    erlsp_index_workspace_job,
+    erlsp_index_deps_job,
+    erlsp_index_otp_job
+  ],
+  Jobs =
+    lists:foldl(
+      fun(JobModule, Acc) ->
+        start_job(RootUri, JobModule, Acc)
+      end, State#state.jobs, JobsToStart),
   State#state{jobs = Jobs};
 handle_message(#{id := Id, method := <<"shutdown">>}, State) ->
   erlsp_io:send(erlsp_jsonrpc:reply(Id, null)),
