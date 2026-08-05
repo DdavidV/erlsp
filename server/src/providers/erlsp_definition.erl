@@ -171,6 +171,13 @@ resolve_call(AllTokens, _ReverseBefore, [{atom, _, Function}, {'(', _} | Rest], 
   %% Bare Fun(...): local call, auto-imported BIF, or a type reference
   %% (types and calls are syntactically identical at this point).
   resolve_local_bif_or_type(AllTokens, Uri, Function, count_arity(Rest));
+resolve_call(_AllTokens, _ReverseBefore, [{atom, _, Module} | _Rest], _Uri) ->
+  %% Last resort: a bare atom not covered by any pattern above (e.g. a
+  %% -behaviour(Module) argument, a parse_transform module name inside
+  %% -compile({parse_transform, Module}), or a plain module-name atom in a
+  %% child spec list like [erlsp_worker_sup, ...]) - try it as a module
+  %% name, since that's what all of these actually are.
+  erlsp_index:module_location(Module);
 resolve_call(_AllTokens, _ReverseBefore, _After, _Uri) ->
   error.
 
