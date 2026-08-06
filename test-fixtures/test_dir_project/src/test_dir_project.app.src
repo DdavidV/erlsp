@@ -1,0 +1,11 @@
+{application, test_dir_project, [
+  {description, "Fixture: has a test/ suite and a test-profile-only dependency"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib
+  ]},
+  {env, []},
+  {modules, []}
+]}.

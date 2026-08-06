@@ -5,6 +5,8 @@ server/rebar3.crashdump
 # test fixture projects (rebar3)
 test-fixtures/**/_build/
 test-fixtures/**/rebar3.crashdump
+test-fixtures/**/_checkouts/
+test-fixtures/**/rebar.lock
 
 # client (node)
 client/node_modules/

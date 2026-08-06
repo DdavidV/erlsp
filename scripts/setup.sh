@@ -7,7 +7,7 @@ echo "Installing client dependencies..."
 cd "$ROOT_DIR/client"
 npm install
 
-echo "Building server escript..."
+echo "Building server release..."
 "$ROOT_DIR/scripts/build-server.sh"
 
 echo "Setup complete."

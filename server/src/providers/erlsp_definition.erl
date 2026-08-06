@@ -305,13 +305,16 @@ resolve_remote_function_or_type(Module, Name, Arity) ->
   end.
 
 %% A bare Name(...) could be a call to a function defined in Uri's own
-%% module, a reference to a type defined in Uri's own module, an
-%% auto-imported BIF (e.g. length/1, is_list/1), or a predefined type
-%% (e.g. non_neg_integer/0, timeout/0) - the latter two both live in the
-%% erlang module. All four are syntactically identical at this point.
-%% Functions are tried before types at each scope, since that's the more
-%% common case; the local module is tried before erlang, since a local
-%% definition shadows a same-named BIF/predefined type.
+%% module, a function brought into scope via -import(Module, [...]), a
+%% reference to a type defined in Uri's own module, an auto-imported BIF
+%% (e.g. length/1, is_list/1), or a predefined type (e.g.
+%% non_neg_integer/0, timeout/0) - the latter two both live in the erlang
+%% module. All these are syntactically identical at this point. Functions
+%% are tried before types at each scope, since that's the more common
+%% case; the local module is tried before an import (a local definition
+%% and an import for the same Name/Arity can't coexist - the compiler
+%% itself rejects that as an ambiguous import - so this ordering never
+%% actually has to choose between them), which is tried before erlang.
 -spec resolve_local_bif_or_type(Tokens, Uri, Name, Arity) -> Result when
   Tokens :: [erl_scan:token()],
   Uri :: erlsp_documents:uri(),
@@ -323,10 +326,26 @@ resolve_local_bif_or_type(Tokens, _Uri, Name, Arity) ->
     {ok, Module} ->
       case erlsp_index:function_location(Module, Name, Arity) of
         {ok, Location} -> {ok, Location};
-        error -> resolve_local_type_or_erlang(Module, Name, Arity)
+        error -> resolve_imported_or_local_type(Module, Name, Arity)
       end;
     error ->
       resolve_erlang_function_or_type(Name, Arity)
+  end.
+
+-spec resolve_imported_or_local_type(Module, Name, Arity) -> Result when
+  Module :: module(),
+  Name :: atom(),
+  Arity :: arity(),
+  Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
+resolve_imported_or_local_type(Module, Name, Arity) ->
+  case erlsp_index:imported_module(Module, Name, Arity) of
+    {ok, ImportedModule} ->
+      case erlsp_index:function_location(ImportedModule, Name, Arity) of
+        {ok, Location} -> {ok, Location};
+        error -> resolve_local_type_or_erlang(Module, Name, Arity)
+      end;
+    error ->
+      resolve_local_type_or_erlang(Module, Name, Arity)
   end.
 
 -spec resolve_local_type_or_erlang(Module, Name, Arity) -> Result when

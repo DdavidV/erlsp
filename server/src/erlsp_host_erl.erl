@@ -3,7 +3,9 @@
 -include_lib("kernel/include/logger.hrl").
 
 -export([
-  compile_file/3
+  compile_file/3,
+  find_host_erl/0,
+  root_dir/0
 ]).
 
 %% Runs compile:file(Path, Options) on the HOST machine's own `erl`
@@ -26,11 +28,109 @@
   EbinDirs :: [file:filename()],
   Result :: compile:comp_ret() | {error, host_erl_unavailable} | {error, {host_erl_failed, term()}}.
 compile_file(Path, Options, EbinDirs) ->
-  case os:find_executable("erl") of
+  case find_host_erl() of
     false ->
       {error, host_erl_unavailable};
     ErlExecutable ->
       run(ErlExecutable, Path, Options, EbinDirs)
+  end.
+
+%% os:find_executable("erl") isn't enough on its own: OTP's own erlexec
+%% prepends the RUNNING node's own BINDIR to PATH for every child process
+%% it spawns.
+%% Once erlsp itself ships as a release with a bundled ERTS, the erl PATH search
+%% from inside erlsp's own process finds ITS OWN bundled erl first
+%% which can't run standalone the way this module invokes it
+%% (it needs the full release launcher's boot machinery), so using it here
+%% would just reproduce the exact false-positive diagnostics problem host delegation
+%% exists to avoid.
+%%
+%% There's no reliable static signal for "this erl won't work standalone"
+%% so each PATH candidate is tried for real, in order, with exactly the invocation
+%% run/4 actually uses (-noshell -eval), and the first one that works is
+%% used. This directly answers the only question that matters ("does this
+%% erl actually run standalone") rather than guessing from a proxy signal.
+-spec find_host_erl() -> Result when
+  Result :: file:filename() | false.
+find_host_erl() ->
+  find_host_erl(os:getenv("PATH")).
+
+-spec find_host_erl(PathEnv) -> Result when
+  PathEnv :: string() | false,
+  Result :: file:filename() | false.
+find_host_erl(false) ->
+  false;
+find_host_erl(PathEnv) ->
+  Separator = case os:type() of
+    {win32, _} -> ";";
+    _Other -> ":"
+  end,
+  Dirs = string:split(PathEnv, Separator, all),
+  first_working_erl(Dirs).
+
+-spec first_working_erl(Dirs) -> Result when
+  Dirs :: [string()],
+  Result :: file:filename() | false.
+first_working_erl([Dir | Rest]) ->
+  ErlBasename = case os:type() of
+    {win32, _} -> "erl.exe";
+    _Other -> "erl"
+  end,
+  Candidate = filename:join(Dir, ErlBasename),
+  case filelib:is_regular(Candidate) andalso runs_standalone(Candidate) of
+    true -> Candidate;
+    false -> first_working_erl(Rest)
+  end;
+first_working_erl([]) ->
+  false.
+
+%% A trivial -noshell -eval invocation, exactly the shape run/4 uses -
+%% this is the actual behavior that matters, not a proxy for it. Fails
+%% fast (5s) since a broken candidate here (e.g. erlsp's own bundled erl,
+%% invoked without the release launcher's boot machinery it needs) hangs
+%% or errors immediately rather than doing real work.
+-spec runs_standalone(Candidate) -> Result when
+  Candidate :: file:filename(),
+  Result :: boolean().
+runs_standalone(Candidate) ->
+  Port = open_port(
+    {spawn_executable, Candidate},
+    [{args, ["-noshell", "-eval", "halt(0)."]}, exit_status, use_stdio, stderr_to_stdout]
+  ),
+  receive
+    {Port, {exit_status, 0}} -> true;
+    {Port, {exit_status, _NonZero}} -> false
+  after 5000 ->
+    catch port_close(Port),
+    false
+  end.
+
+%% The HOST's own OTP install root (e.g. "/usr/lib/erlang" or an asdf/kerl
+%% path), found by asking a real, working host erl for its own
+%% code:root_dir/0 - NOT erlsp's own code:root_dir/0, which under the
+%% bundled-ERTS release only sees the handful of OTP apps erlsp itself
+%% depends on (kernel, stdlib, compiler, jsx), not the host's full
+%% install. erlsp_index_otp_job uses this to index the host's real
+%% stdlib/kernel/eunit/etc. source for go-to-definition - using erlsp's
+%% own bundled root there would silently make every OTP application erlsp
+%% doesn't itself depend on invisible to go-to-definition, even though
+%% it's genuinely installed on the host.
+-spec root_dir() -> Result when
+  Result :: {ok, file:filename()} | {error, host_erl_unavailable} | {error, {host_erl_failed, term()}}.
+root_dir() ->
+  case find_host_erl() of
+    false ->
+      {error, host_erl_unavailable};
+    ErlExecutable ->
+      Port = open_port(
+        {spawn_executable, ErlExecutable},
+        [{args, ["-noshell", "-eval", "io:put_chars(code:root_dir()), halt(0)."]},
+         binary, exit_status, use_stdio, stderr_to_stdout]
+      ),
+      case collect(Port, <<>>) of
+        {ok, Output} -> {ok, binary_to_list(Output)};
+        {error, Reason} -> {error, {host_erl_failed, Reason}}
+      end
   end.
 
 -spec run(ErlExecutable, Path, Options, EbinDirs) -> Result when

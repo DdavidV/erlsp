@@ -1,0 +1,11 @@
+{application, test_only_dep_fixture, [
+  {description, "Fixture standing in for a real test-only dependency like meck/katt"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib
+  ]},
+  {env, []},
+  {modules, []}
+]}.

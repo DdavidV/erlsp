@@ -1,0 +1,12 @@
+{application, behaviour_dep_user, [
+  {description, "Fixture: implements a sibling app's behaviour"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib,
+    dep_a
+  ]},
+  {env, []},
+  {modules, []}
+]}.

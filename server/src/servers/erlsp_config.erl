@@ -175,16 +175,17 @@ include_paths_for_root(ProjectRoot) ->
   ProjectRoot :: file:filename(),
   Result :: [file:filename()].
 source_dirs_for_root(ProjectRoot) ->
-  resolve_paths(ProjectRoot, ["src", "apps/*/src"]).
+  resolve_paths(ProjectRoot, ["src", "apps/*/src", "test", "apps/*/test"]).
 
 -spec dep_source_dirs_for_root(ProjectRoot) -> Result when
   ProjectRoot :: file:filename(),
   Result :: [file:filename()].
 dep_source_dirs_for_root(ProjectRoot) ->
   OwnAppNames = [atom_to_list(AppName) || AppName <- own_app_names(ProjectRoot)],
-  BuildLibDirs = filelib:wildcard(filename:join(ProjectRoot, "_build/*/lib/*")),
+  BuildDirs = filelib:wildcard(filename:join(ProjectRoot, "_build/*/lib/*")) ++
+    filelib:wildcard(filename:join(ProjectRoot, "_build/*/checkouts/*")),
   [filename:join(Dir, "src")
-  || Dir <- BuildLibDirs,
+  || Dir <- BuildDirs,
      filelib:is_dir(filename:join(Dir, "src")),
      not lists:member(filename:basename(Dir), OwnAppNames)].
 
@@ -197,7 +198,36 @@ dep_source_dirs_for_root(ProjectRoot) ->
   ProjectRoot :: file:filename(),
   Result :: [file:filename()].
 ebin_paths_for_root(ProjectRoot) ->
-  filelib:wildcard(filename:join(ProjectRoot, "_build/*/lib/*/ebin")).
+  AllEbinDirs = filelib:wildcard(filename:join(ProjectRoot, "_build/*/lib/*/ebin")) ++
+    filelib:wildcard(filename:join(ProjectRoot, "_build/*/checkouts/*/ebin")),
+  ByAppName = lists:foldl(fun(EbinDir, Acc) ->
+    AppName = filename:basename(filename:dirname(EbinDir)),
+    maps:update_with(AppName, fun(Existing) -> prefer_default(Existing, EbinDir) end, EbinDir, Acc)
+  end, #{}, AllEbinDirs),
+  maps:values(ByAppName).
+
+-spec prefer_default(EbinDirA, EbinDirB) -> Result when
+  EbinDirA :: file:filename(),
+  EbinDirB :: file:filename(),
+  Result :: file:filename().
+prefer_default(EbinDirA, EbinDirB) ->
+  case is_default_profile(EbinDirA) of
+    true -> EbinDirA;
+    false ->
+      case is_default_profile(EbinDirB) of
+        true -> EbinDirB;
+        false -> EbinDirA
+      end
+  end.
+
+-spec is_default_profile(EbinDir) -> Result when
+  EbinDir :: file:filename(),
+  Result :: boolean().
+is_default_profile(EbinDir) ->
+  %% EbinDir is ".../_build/<profile>/lib/<app>/ebin" - walk up three
+  %% levels from ebin/ to reach <profile>.
+  Profile = filename:basename(filename:dirname(filename:dirname(filename:dirname(EbinDir)))),
+  Profile =:= "default".
 
 -spec own_app_names(ProjectRoot) -> Result when
   ProjectRoot :: file:filename(),
@@ -282,8 +312,10 @@ include_dirs() ->
   [
     "src",
     "include",
+    "test",
     "apps",
     "apps/*/include",
+    "apps/*/test",
     "_build/*/lib/",
     "_build/*/lib/*/include"
   ].

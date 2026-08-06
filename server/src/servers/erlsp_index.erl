@@ -8,6 +8,7 @@
 -define(RECORDS_TABLE, erlsp_index_records).
 -define(MACROS_TABLE, erlsp_index_macros).
 -define(INCLUDES_TABLE, erlsp_index_includes).
+-define(IMPORTS_TABLE, erlsp_index_imports).
 
 -record(state, {}).
 
@@ -35,7 +36,8 @@
   types_in_module/1,
   records_in_module/1,
   macros_in_uri/1,
-  all_modules/0
+  all_modules/0,
+  imported_module/3
 ]).
 
 -spec start_link() -> Result when
@@ -53,6 +55,7 @@ init(_InitArgs) ->
   ets:new(?RECORDS_TABLE, [set, public, named_table, {read_concurrency, true}]),
   ets:new(?MACROS_TABLE, [set, public, named_table, {read_concurrency, true}]),
   ets:new(?INCLUDES_TABLE, [set, public, named_table, {read_concurrency, true}]),
+  ets:new(?IMPORTS_TABLE, [set, public, named_table, {read_concurrency, true}]),
   {ok, #state{}}.
 
 %% Parses Path and records where its module, functions, types, records and
@@ -189,6 +192,10 @@ index_forms(Uri, FormUri, Module, [{attribute, TypeLine, Kind, {Name, _TypeDef, 
 index_forms(Uri, FormUri, Module, [{attribute, RecordLine, record, {Name, _Fields}} | Rest]) ->
   ets:insert(?RECORDS_TABLE, {{Module, Name}, FormUri, anno_line(RecordLine)}),
   index_forms(Uri, FormUri, Module, Rest);
+index_forms(Uri, FormUri, Module, [{attribute, _Line, import, {ImportedModule, NamesAndArities}} | Rest]) ->
+  [ets:insert(?IMPORTS_TABLE, {{Module, Name, Arity}, ImportedModule})
+  || {Name, Arity} <- NamesAndArities],
+  index_forms(Uri, FormUri, Module, Rest);
 index_forms(Uri, FormUri, Module, [_OtherForm | Rest]) ->
   index_forms(Uri, FormUri, Module, Rest);
 index_forms(_Uri, _FormUri, _Module, []) ->
@@ -296,6 +303,23 @@ all_modules() ->
 function_location(Module, Function, Arity) ->
   case ets:lookup(?FUNCTIONS_TABLE, {Module, Function, Arity}) of
     [{{Module, Function, Arity}, Uri, Line, _ParamNames}] -> {ok, {Uri, Line}};
+    [] -> error
+  end.
+
+%% The module a Name/Arity call in Module actually resolves to, per
+%% Module's own -import(ImportedModule, [Name/Arity, ...]) attribute -
+%% e.g. a module with -import(lists, [reverse/1]) calling reverse(X)
+%% resolves to lists, not Module itself or erlang. error if Module has no
+%% matching import (the ordinary case for most Name/Arity calls, which
+%% are either local or auto-imported BIFs).
+-spec imported_module(Module, Function, Arity) -> Result when
+  Module :: module(),
+  Function :: atom(),
+  Arity :: arity(),
+  Result :: {ok, module()} | error.
+imported_module(Module, Function, Arity) ->
+  case ets:lookup(?IMPORTS_TABLE, {Module, Function, Arity}) of
+    [{{Module, Function, Arity}, ImportedModule}] -> {ok, ImportedModule};
     [] -> error
   end.
 
