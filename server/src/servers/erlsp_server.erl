@@ -110,6 +110,24 @@ remove_job(Uri, JobModule, Jobs) ->
     _Size -> Jobs#{Uri => JobsForUri}
   end.
 
+%% Starts (or restarts, cancelling any already in flight for RootUri) all
+%% three bulk indexing jobs. Shared by the initialize handler and the
+%% erlsp/reindexWorkspace custom command.
+-spec start_index_jobs(RootUri, Jobs) -> Result when
+  RootUri :: erlsp_documents:uri(),
+  Jobs :: jobs(),
+  Result :: jobs().
+start_index_jobs(RootUri, Jobs) ->
+  JobsToStart = [
+    erlsp_index_workspace_job,
+    erlsp_index_deps_job,
+    erlsp_index_otp_job
+  ],
+  lists:foldl(
+    fun(JobModule, Acc) ->
+      start_job(RootUri, JobModule, Acc)
+    end, Jobs, JobsToStart).
+
 %% Cancels any existing JobModule job for Uri, then starts a new one
 %% running JobModule:run(Uri), recording it in Jobs.
 %% Independent of whatever other job kinds are running for the same Uri.
@@ -195,20 +213,19 @@ handle_message(#{id := Id, method := <<"initialize">>, params := Params}, State)
     completionProvider => #{triggerCharacters => [<<":">>, <<"?">>, <<"#">>]}
   },
   erlsp_io:send(erlsp_jsonrpc:reply(Id, #{capabilities => Capabilities})),
-  JobsToStart = [
-    erlsp_index_workspace_job,
-    erlsp_index_deps_job,
-    erlsp_index_otp_job
-  ],
-  Jobs =
-    lists:foldl(
-      fun(JobModule, Acc) ->
-        start_job(RootUri, JobModule, Acc)
-      end, State#state.jobs, JobsToStart),
+  Jobs = start_index_jobs(RootUri, State#state.jobs),
   State#state{jobs = Jobs};
 handle_message(#{id := Id, method := <<"shutdown">>}, State) ->
   erlsp_io:send(erlsp_jsonrpc:reply(Id, null)),
   State;
+%% Custom command backing the: "erlsp: Reindex Workspace" client command
+handle_message(#{method := <<"erlsp/reindexWorkspace">>}, State) ->
+  ?LOG_INFO("reindexing workspace"),
+  ok = erlsp_index:clear(),
+  ok = erlsp_config:clear_project_caches(),
+  RootUri = erlsp_utils:path_to_uri(erlsp_config:root_path()),
+  Jobs = start_index_jobs(RootUri, State#state.jobs),
+  State#state{jobs = Jobs};
 handle_message(#{method := <<"textDocument/didOpen">>, params := Params}, State) ->
   #{textDocument := #{uri := Uri, text := Text}} = Params,
   erlsp_documents:open(Uri, Text),

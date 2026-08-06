@@ -46,6 +46,29 @@ export function activate(context: vscode.ExtensionContext): void {
         `erlsp: failed to start server: ${startErr}`
       );
     });
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("erlsp.reindexWorkspace", async () => {
+      if (!client) {
+        return;
+      }
+      await client.sendNotification("erlsp/reindexWorkspace");
+      vscode.window.setStatusBarMessage("erlsp: reindexing workspace", 5000);
+    }),
+    vscode.commands.registerCommand("erlsp.restartServer", async () => {
+      if (!client) {
+        return;
+      }
+      try {
+        await client.restart();
+        vscode.window.setStatusBarMessage("erlsp: server restarted", 5000);
+      } catch (restartErr) {
+        vscode.window.showErrorMessage(
+          `erlsp: failed to restart server: ${restartErr}`
+        );
+      }
+    })
+  );
 }
 
 export function deactivate(): Thenable<void> | undefined {

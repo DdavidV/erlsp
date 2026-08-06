@@ -25,6 +25,8 @@
 -export([
   index_file/1,
   index_files/3,
+  clear/0,
+  remove_uri/1,
   module_location/1,
   function_location/3,
   function_param_names/3,
@@ -57,6 +59,40 @@ init(_InitArgs) ->
   ets:new(?INCLUDES_TABLE, [set, public, named_table, {read_concurrency, true}]),
   ets:new(?IMPORTS_TABLE, [set, public, named_table, {read_concurrency, true}]),
   {ok, #state{}}.
+
+%% Deletes every indexed entry without recreating the tables - used by a
+%% full reindex, so a file that's since been deleted/renamed doesn't
+%% leave stale entries behind.
+-spec clear() -> Result when
+  Result :: ok.
+clear() ->
+  ets:delete_all_objects(?FUNCTIONS_TABLE),
+  ets:delete_all_objects(?MODULES_TABLE),
+  ets:delete_all_objects(?TYPES_TABLE),
+  ets:delete_all_objects(?RECORDS_TABLE),
+  ets:delete_all_objects(?MACROS_TABLE),
+  ets:delete_all_objects(?INCLUDES_TABLE),
+  ets:delete_all_objects(?IMPORTS_TABLE),
+  ok.
+
+%% Removes every entry defined directly IN Uri.
+-spec remove_uri(Uri) -> Result when
+  Uri :: erlsp_documents:uri(),
+  Result :: ok.
+remove_uri(Uri) ->
+  case ets:match_object(?MODULES_TABLE, {'_', Uri, '_'}) of
+    [{Module, Uri, _Line}] ->
+      ets:match_delete(?IMPORTS_TABLE, {{Module, '_', '_'}, '_'});
+    [] ->
+      ok
+  end,
+  ets:match_delete(?FUNCTIONS_TABLE, {{'_', '_', '_'}, Uri, '_', '_'}),
+  ets:match_delete(?MODULES_TABLE, {'_', Uri, '_'}),
+  ets:match_delete(?TYPES_TABLE, {{'_', '_', '_'}, Uri, '_'}),
+  ets:match_delete(?RECORDS_TABLE, {{'_', '_'}, Uri, '_'}),
+  ets:match_delete(?MACROS_TABLE, {{Uri, '_'}, Uri, '_'}),
+  ets:delete(?INCLUDES_TABLE, Uri),
+  ok.
 
 %% Parses Path and records where its module, functions, types, records and
 %% macros are defined, and which headers it includes.

@@ -17,6 +17,7 @@
 -export([
   init_workspace/1,
   root_path/0,
+  clear_project_caches/0,
   project_roots/0,
   project_root_for_path/1,
   include_paths_for_root/1,
@@ -73,6 +74,19 @@ root_path() ->
     [{root_path, RootPath}] -> RootPath;
     [] -> undefined
   end.
+
+%% Drops every cached {project_root, _}/{include_paths, _}/{build_tools, _}
+%% entry, keeping root_path itself.
+-spec clear_project_caches() -> Result when
+  Result :: ok.
+clear_project_caches() ->
+  RootPath = root_path(),
+  ets:delete_all_objects(?MODULE),
+  case RootPath of
+    undefined -> ok;
+    _Path -> true = ets:insert(?MODULE, {root_path, RootPath})
+  end,
+  ok.
 
 %% Every distinct project root found under the workspace root, i.e. every
 %% directory (searched recursively) that itself contains a

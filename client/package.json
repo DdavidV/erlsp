@@ -57,7 +57,17 @@
           "description": "Path to the erlsp server executable (bin/erlsp from a built release). If empty, the bundled server is used."
         }
       }
-    }
+    },
+    "commands": [
+      {
+        "command": "erlsp.reindexWorkspace",
+        "title": "erlsp: Reindex Workspace"
+      },
+      {
+        "command": "erlsp.restartServer",
+        "title": "erlsp: Restart Language Server"
+      }
+    ]
   },
   "scripts": {
     "check-types": "tsc -p ./ --noEmit",

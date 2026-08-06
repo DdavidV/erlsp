@@ -22,7 +22,8 @@ erlsp_config_test_() ->
     fun build_tools_detects_rebar3/1,
     fun project_root_for_path_walks_up_from_a_file/1,
     fun ebin_paths_dedupes_by_app_name_preferring_default/1,
-    fun dep_source_dirs_excludes_own_apps/1
+    fun dep_source_dirs_excludes_own_apps/1,
+    fun clear_project_caches_keeps_root_path_but_forgets_cached_lookups/1
   ]}.
 
 single_app_project_root(_Pid) ->
@@ -102,3 +103,19 @@ dep_source_dirs_excludes_own_apps(_Pid) ->
   DepDirs = erlsp_config:dep_source_dirs_for_root(Root),
   OwnSrcDir = filename:join(Root, "_build/default/lib/parse_transform_project/src"),
   ?_assertNot(lists:member(OwnSrcDir, DepDirs)).
+
+clear_project_caches_keeps_root_path_but_forgets_cached_lookups(_Pid) ->
+  Root = fixture("include_lib_project"),
+  ok = erlsp_config:init_workspace(erlsp_utils:path_to_uri(Root)),
+  %% Populate every cache this module keeps.
+  _ = erlsp_config:project_root_for_path(filename:join(Root, "src/include_lib_fixture.erl")),
+  _ = erlsp_config:include_paths_for_root(Root),
+  _ = erlsp_config:build_tools_for_root(Root),
+  CachedBefore = ets:tab2list(erlsp_config),
+  ok = erlsp_config:clear_project_caches(),
+  CachedAfter = ets:tab2list(erlsp_config),
+  [
+    ?_assert(length(CachedBefore) > 1),
+    ?_assertEqual([{root_path, Root}], CachedAfter),
+    ?_assertEqual(Root, erlsp_config:root_path())
+  ].
