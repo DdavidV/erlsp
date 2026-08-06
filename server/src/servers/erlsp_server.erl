@@ -7,8 +7,10 @@
 
 -type jobs_for_uri() :: #{module() => pid()}.
 -type jobs() :: #{erlsp_documents:uri() => jobs_for_uri()}.
+-type diagnostics_for_uri() :: #{module() => [erlsp_job:diagnostic()]}.
+-type diagnostics() :: #{erlsp_documents:uri() => diagnostics_for_uri()}.
 
--record(state, {io :: pid(), jobs :: jobs()}).
+-record(state, {io :: pid(), jobs :: jobs(), diagnostics :: diagnostics()}).
 
 -type state() :: #state{}.
 
@@ -18,6 +20,10 @@
   JobModule == erlsp_index_deps_job orelse
   JobModule == erlsp_index_file_job).
 
+-define(IS_DIAGNOSTICS_JOB(JobModule),
+  JobModule == erlsp_diag_compiler orelse
+  JobModule == erlsp_diag_elvis).
+
 -export([
   start_link/0,
   init/1,
@@ -25,6 +31,11 @@
   handle_cast/2,
   handle_info/2,
   terminate/2
+]).
+
+%% Exported for direct unit testing of the diagnostics-merging logic.
+-export([
+  merge_diagnostics/4
 ]).
 
 -spec start_link() -> Result when
@@ -38,7 +49,7 @@ start_link() ->
 init(_InitArgs) ->
   process_flag(trap_exit, true),
   {ok, IoPid} = erlsp_io:start_link(),
-  {ok, #state{io = IoPid, jobs = #{}}}.
+  {ok, #state{io = IoPid, jobs = #{}, diagnostics = #{}}}.
 
 -spec handle_call(Request, From, State) -> Result when
   Request :: term(),
@@ -181,11 +192,36 @@ cancel_jobs_for_uri(Uri, Jobs) ->
 handle_job_result(JobModule, Uri, {job_crashed, Class, Reason, Stacktrace}, State) ->
   ?LOG_ERROR("~p crashed for ~s: ~p:~p~n~p", [JobModule, Uri, Class, Reason, Stacktrace]),
   State;
-handle_job_result(erlsp_diag_compiler, Uri, Diagnostics, State) ->
-  publish_diagnostics(Uri, Diagnostics),
-  State;
+handle_job_result(JobModule, Uri, Diagnostics, State) when ?IS_DIAGNOSTICS_JOB(JobModule) ->
+  record_and_publish_diagnostics(JobModule, Uri, Diagnostics, State);
 handle_job_result(JobModule, _Uri, ok, State) when ?IS_INDEX_JOB(JobModule) ->
   State.
+
+%% Records JobModule's latest diagnostics for Uri, then publishes the
+%% UNION of every diagnostics-producing job's latest result for that
+%% Uri since LSP's publishDiagnostics notification replaces the WHOLE
+%% diagnostic set for a Uri each time it's sent.
+-spec record_and_publish_diagnostics(JobModule, Uri, Diagnostics, State) -> Result when
+  JobModule :: module(),
+  Uri :: erlsp_documents:uri(),
+  Diagnostics :: [erlsp_job:diagnostic()],
+  State :: state(),
+  Result :: state().
+record_and_publish_diagnostics(JobModule, Uri, Diagnostics, State) ->
+  NewDiagnostics = merge_diagnostics(State#state.diagnostics, Uri, JobModule, Diagnostics),
+  publish_diagnostics(Uri, lists:append(maps:values(maps:get(Uri, NewDiagnostics)))),
+  State#state{diagnostics = NewDiagnostics}.
+
+-spec merge_diagnostics(Diagnostics, Uri, JobModule, JobDiagnostics) -> Result when
+  Diagnostics :: diagnostics(),
+  Uri :: erlsp_documents:uri(),
+  JobModule :: module(),
+  JobDiagnostics :: [erlsp_job:diagnostic()],
+  Result :: diagnostics().
+merge_diagnostics(Diagnostics, Uri, JobModule, JobDiagnostics) ->
+  DiagnosticsForUri = maps:get(Uri, Diagnostics, #{}),
+  NewDiagnosticsForUri = DiagnosticsForUri#{JobModule => JobDiagnostics},
+  Diagnostics#{Uri => NewDiagnosticsForUri}.
 
 -spec publish_diagnostics(Uri, Diagnostics) -> Result when
   Uri :: erlsp_documents:uri(),
@@ -230,7 +266,8 @@ handle_message(#{method := <<"erlsp/reindexWorkspace">>}, State) ->
 handle_message(#{method := <<"textDocument/didOpen">>, params := Params}, State) ->
   #{textDocument := #{uri := Uri, text := Text}} = Params,
   erlsp_documents:open(Uri, Text),
-  Jobs = start_job(Uri, erlsp_diag_compiler, State#state.jobs),
+  Jobs0 = start_job(Uri, erlsp_diag_compiler, State#state.jobs),
+  Jobs = start_job(Uri, erlsp_diag_elvis, Jobs0),
   State#state{jobs = Jobs};
 handle_message(#{method := <<"textDocument/didChange">>, params := Params}, State) ->
   #{textDocument := #{uri := Uri}, contentChanges := Changes} = Params,
@@ -240,14 +277,16 @@ handle_message(#{method := <<"textDocument/didChange">>, params := Params}, Stat
 handle_message(#{method := <<"textDocument/didSave">>, params := Params}, State) ->
   #{textDocument := #{uri := Uri}} = Params,
   Jobs0 = start_job(Uri, erlsp_diag_compiler, State#state.jobs),
-  Jobs = start_job(Uri, erlsp_index_file_job, Jobs0),
+  Jobs1 = start_job(Uri, erlsp_diag_elvis, Jobs0),
+  Jobs = start_job(Uri, erlsp_index_file_job, Jobs1),
   State#state{jobs = Jobs};
 handle_message(#{method := <<"textDocument/didClose">>, params := Params}, State) ->
   #{textDocument := #{uri := Uri}} = Params,
   erlsp_documents:close(Uri),
   Jobs = cancel_jobs_for_uri(Uri, State#state.jobs),
+  Diagnostics = maps:remove(Uri, State#state.diagnostics),
   publish_diagnostics(Uri, []),
-  State#state{jobs = Jobs};
+  State#state{jobs = Jobs, diagnostics = Diagnostics};
 handle_message(#{id := Id, method := <<"textDocument/definition">>, params := Params}, State) ->
   #{textDocument := #{uri := Uri}, position := #{line := Line, character := Character}} = Params,
   Result = case erlsp_definition:locate(Uri, Line, Character) of

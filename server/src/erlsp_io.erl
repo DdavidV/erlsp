@@ -74,6 +74,6 @@ send(Message) ->
   %% in Body got reinterpreted as its  own Unicode codepoint and re-encoded,
   %% producing fewer bytes than the already-computed Content-Length promised -
   %% desyncing every message  after it and corrupting the whole session.
-  %% Flattening to one binary first and writing via ~s  avoids that
+  %% Flattening to one binary first and writing via ~s avoids that
   %% mixed-iolist path entirely.
   ok = io:format(standard_io, "~s", [iolist_to_binary(Message)]).

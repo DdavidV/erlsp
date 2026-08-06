@@ -4,10 +4,14 @@
 
 -import(erlsp_test_utils, [fixture/1, rebar3_compile/2]).
 
+compile_file(Path, Options, EbinDirs) ->
+  PaDirs = [filename:join(code:lib_dir(erlsp), "ebin") | EbinDirs],
+  erlsp_host_erl:run(erlsp_host_rpc, compile_file, PaDirs, [Path, Options], []).
+
 compile_file_succeeds_with_no_ebin_dirs_needed_test() ->
   Root = fixture("parse_transform_project"),
   Path = filename:join(Root, "src/pt_fixture_transform.erl"),
-  Result = erlsp_host_erl:compile_file(Path, [basic_validation, return_errors, return_warnings], []),
+  Result = compile_file(Path, [basic_validation, return_errors, return_warnings], []),
   ?assertMatch({ok, [], []}, Result).
 
 compile_file_resolves_parse_transform_with_ebin_dir_on_path_test() ->
@@ -15,14 +19,14 @@ compile_file_resolves_parse_transform_with_ebin_dir_on_path_test() ->
   ok = rebar3_compile(Root, []),
   Path = filename:join(Root, "src/pt_fixture_user.erl"),
   EbinDir = filename:join(Root, "_build/default/lib/parse_transform_project/ebin"),
-  Result = erlsp_host_erl:compile_file(Path, [basic_validation, return_errors, return_warnings], [EbinDir]),
+  Result = compile_file(Path, [basic_validation, return_errors, return_warnings], [EbinDir]),
   ?assertMatch({ok, [], []}, Result).
 
 compile_file_fails_without_ebin_dir_on_path_test() ->
   Root = fixture("parse_transform_project"),
   ok = rebar3_compile(Root, []),
   Path = filename:join(Root, "src/pt_fixture_user.erl"),
-  Result = erlsp_host_erl:compile_file(Path, [basic_validation, return_errors, return_warnings], []),
+  Result = compile_file(Path, [basic_validation, return_errors, return_warnings], []),
   ?assertMatch({error, _Errors, _Warnings}, Result).
 
 compile_file_reports_real_syntax_errors_test() ->
@@ -33,7 +37,7 @@ compile_file_reports_real_syntax_errors_test() ->
     "go() -> .\n"
   >>),
   try
-    Result = erlsp_host_erl:compile_file(TmpPath, [basic_validation, return_errors, return_warnings], []),
+    Result = compile_file(TmpPath, [basic_validation, return_errors, return_warnings], []),
     ?assertMatch({error, [{_File, [_ | _]}], _Warnings}, Result)
   after
     file:delete(TmpPath)
@@ -50,7 +54,7 @@ skips_a_broken_erl_ahead_on_path_and_finds_the_real_one_test() ->
   try
     Root = fixture("parse_transform_project"),
     Path = filename:join(Root, "src/pt_fixture_transform.erl"),
-    Result = erlsp_host_erl:compile_file(Path, [basic_validation, return_errors, return_warnings], []),
+    Result = compile_file(Path, [basic_validation, return_errors, return_warnings], []),
     ?assertMatch({ok, [], []}, Result)
   after
     os:putenv("PATH", RealPath),

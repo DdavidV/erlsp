@@ -37,8 +37,9 @@ host_otp_root_dir() ->
 -spec discover_host_otp_root_dir() -> Result when
   Result :: file:filename().
 discover_host_otp_root_dir() ->
-  case erlsp_host_erl:root_dir() of
-    {ok, RootDir} ->
+  PaDirs = [filename:join(code:lib_dir(erlsp), "ebin")],
+  case erlsp_host_erl:run(erlsp_host_rpc, root_dir, PaDirs, [], []) of
+    RootDir when is_list(RootDir) ->
       RootDir;
     {error, Reason} ->
       ?LOG_WARNING("falling back to erlsp's own OTP root for indexing: ~p", [Reason]),

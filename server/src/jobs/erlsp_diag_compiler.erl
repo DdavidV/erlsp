@@ -44,15 +44,17 @@ compile_diagnostics(Path) ->
   IncludeOptions =
     [{i, IncludeDir} || IncludeDir <- erlsp_config:include_paths_for_root(ProjectRoot)],
   Options = [basic_validation, return_errors, return_warnings | IncludeOptions],
-  EbinDirs = erlsp_config:ebin_paths_for_root(ProjectRoot),
-  {Errors, Warnings} = case erlsp_host_erl:compile_file(Path, Options, EbinDirs) of
-    {_, HostErrors, HostWarnings} ->
-      {HostErrors, HostWarnings};
-    {error, Reason} ->
-      ?LOG_WARNING("falling back to in-process compile for ~s: ~p", [Path, Reason]),
-      {_, InProcessErrors, InProcessWarnings} = compile:file(Path, Options),
-      {InProcessErrors, InProcessWarnings}
-  end,
+  PaDirs =
+    [filename:join(code:lib_dir(erlsp), "ebin") | erlsp_config:ebin_paths_for_root(ProjectRoot)],
+  {Errors, Warnings} =
+    case erlsp_host_erl:run(erlsp_host_rpc, compile_file, PaDirs, [Path, Options], []) of
+      {_, HostErrors, HostWarnings} ->
+        {HostErrors, HostWarnings};
+      {error, Reason} ->
+        ?LOG_WARNING("falling back to in-process compile for ~s: ~p", [Path, Reason]),
+        {_, InProcessErrors, InProcessWarnings} = compile:file(Path, Options),
+        {InProcessErrors, InProcessWarnings}
+    end,
   ErrorDiagnostics = file_infos_to_diagnostics(Errors, ?DIAGNOSTIC_SEVERITY_ERROR),
   WarningDiagnostics = file_infos_to_diagnostics(Warnings, ?DIAGNOSTIC_SEVERITY_WARNING),
   ErrorDiagnostics ++ WarningDiagnostics.
