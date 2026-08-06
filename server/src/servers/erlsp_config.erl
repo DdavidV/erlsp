@@ -14,6 +14,7 @@
   terminate/2
 ]).
 
+%% Workspace/project discovery.
 -export([
   init_workspace/1,
   root_path/0,
@@ -27,11 +28,21 @@
   build_tools_for_root/1
 ]).
 
+%% erlsp.config-sourced settings.
+-export([
+  otp_path/0,
+  otp_apps_exclude/0,
+  deps_exclude/0,
+  rebar_profile/0
+]).
+
 -export_type([
   build_tool/0
 ]).
 
 -type build_tool() :: rebar3 | mix.
+
+-define(CONFIG_FILE_NAME, "erlsp.config").
 
 -spec start_link() -> Result when
   Result :: {ok, pid()}.
@@ -50,13 +61,47 @@ init(_InitArgs) ->
 %% which case the current working directory is used) and stores it.
 %% Unlike a single app root, individual project roots (and their include
 %% paths) are discovered lazily and cached, per file, via project_root_for_path/1.
+%% Also loads erlsp.config from the workspace root, if present.
 -spec init_workspace(RootUri) -> Result when
   RootUri :: erlsp_documents:uri() | null,
   Result :: ok.
 init_workspace(RootUri) ->
   RootPath = root_path_from_uri(RootUri),
   true = ets:insert(?MODULE, {root_path, RootPath}),
+  true = ets:insert(?MODULE, {user_config, load_user_config(RootPath)}),
   ok.
+
+-spec load_user_config(WorkspaceRoot) -> Result when
+  WorkspaceRoot :: file:filename(),
+  Result :: [{atom(), term()}].
+load_user_config(WorkspaceRoot) ->
+  ConfigPath = filename:join(WorkspaceRoot, ?CONFIG_FILE_NAME),
+  case filelib:is_regular(ConfigPath) of
+    false ->
+      [];
+    true ->
+      case file:consult(ConfigPath) of
+        {ok, [Terms]} when is_list(Terms) ->
+          Terms;
+        {ok, Terms} when is_list(Terms) ->
+          %% file:consult/1 returns one list element per top-level term; a
+          %% well-formed erlsp.config is a single proplist, but tolerate a
+          %% file with the proplist's entries written as separate
+          %% top-level terms too (no ok = ... wrapping needed by the user).
+          lists:append([T || T <- Terms, is_list(T)]);
+        {error, Reason} ->
+          logger:warning("failed to read/parse ~s: ~p", [ConfigPath, Reason]),
+          []
+      end
+  end.
+
+-spec user_config() -> Result when
+  Result :: [{atom(), term()}].
+user_config() ->
+  case ets:lookup(?MODULE, user_config) of
+    [{user_config, Config}] -> Config;
+    [] -> []
+  end.
 
 -spec root_path_from_uri(RootUri) -> Result when
   RootUri :: erlsp_documents:uri() | null,
@@ -76,16 +121,20 @@ root_path() ->
   end.
 
 %% Drops every cached {project_root, _}/{include_paths, _}/{build_tools, _}
-%% entry, keeping root_path itself.
+%% entry, keeping root_path and the loaded user_config itself (reindexing
+%% shouldn't require the user to have kept the same erlsp.config open, but
+%% it also shouldn't silently drop settings they've already configured).
 -spec clear_project_caches() -> Result when
   Result :: ok.
 clear_project_caches() ->
   RootPath = root_path(),
+  UserConfig = user_config(),
   ets:delete_all_objects(?MODULE),
   case RootPath of
     undefined -> ok;
     _Path -> true = ets:insert(?MODULE, {root_path, RootPath})
   end,
+  true = ets:insert(?MODULE, {user_config, UserConfig}),
   ok.
 
 %% Every distinct project root found under the workspace root, i.e. every
@@ -189,19 +238,29 @@ include_paths_for_root(ProjectRoot) ->
   ProjectRoot :: file:filename(),
   Result :: [file:filename()].
 source_dirs_for_root(ProjectRoot) ->
-  resolve_paths(ProjectRoot, ["src", "apps/*/src", "test", "apps/*/test"]).
+  ConfiguredSourceDirs = proplists:get_value(source_dirs, user_config(), []),
+  resolve_paths(ProjectRoot, ["src", "apps/*/src", "test", "apps/*/test"] ++ ConfiguredSourceDirs).
 
 -spec dep_source_dirs_for_root(ProjectRoot) -> Result when
   ProjectRoot :: file:filename(),
   Result :: [file:filename()].
 dep_source_dirs_for_root(ProjectRoot) ->
   OwnAppNames = [atom_to_list(AppName) || AppName <- own_app_names(ProjectRoot)],
+  ExcludedApps = deps_exclude(),
   BuildDirs = filelib:wildcard(filename:join(ProjectRoot, "_build/*/lib/*")) ++
     filelib:wildcard(filename:join(ProjectRoot, "_build/*/checkouts/*")),
   [filename:join(Dir, "src")
   || Dir <- BuildDirs,
      filelib:is_dir(filename:join(Dir, "src")),
-     not lists:member(filename:basename(Dir), OwnAppNames)].
+     not lists:member(filename:basename(Dir), OwnAppNames),
+     not lists:member(filename:basename(Dir), ExcludedApps)].
+
+%% Dependency app names (as strings, matching filename:basename/1's
+%% return shape) to skip when indexing dependencies.
+-spec deps_exclude() -> Result when
+  Result :: [string()].
+deps_exclude() ->
+  [atom_to_list(App) || App <- proplists:get_value(deps_exclude, user_config(), [])].
 
 %% Every built app's ebin directory under ProjectRoot's _build/ - own
 %% app(s) and dependencies alike, since code:lib_dir/1 is name-keyed with
@@ -214,34 +273,43 @@ dep_source_dirs_for_root(ProjectRoot) ->
 ebin_paths_for_root(ProjectRoot) ->
   AllEbinDirs = filelib:wildcard(filename:join(ProjectRoot, "_build/*/lib/*/ebin")) ++
     filelib:wildcard(filename:join(ProjectRoot, "_build/*/checkouts/*/ebin")),
+  PreferredProfile = rebar_profile(),
   ByAppName = lists:foldl(fun(EbinDir, Acc) ->
     AppName = filename:basename(filename:dirname(EbinDir)),
-    maps:update_with(AppName, fun(Existing) -> prefer_default(Existing, EbinDir) end, EbinDir, Acc)
+    maps:update_with(AppName,
+      fun(Existing) -> prefer_profile(Existing, EbinDir, PreferredProfile) end, EbinDir, Acc)
   end, #{}, AllEbinDirs),
   maps:values(ByAppName).
 
--spec prefer_default(EbinDirA, EbinDirB) -> Result when
+%% erlsp.config's rebar_profile key - which _build/<profile>/... tree to
+%% prefer when the same app is built under more than one profile.
+-spec rebar_profile() -> Result when
+  Result :: string().
+rebar_profile() ->
+  atom_to_list(proplists:get_value(rebar_profile, user_config(), default)).
+
+-spec prefer_profile(EbinDirA, EbinDirB, PreferredProfile) -> Result when
   EbinDirA :: file:filename(),
   EbinDirB :: file:filename(),
+  PreferredProfile :: string(),
   Result :: file:filename().
-prefer_default(EbinDirA, EbinDirB) ->
-  case is_default_profile(EbinDirA) of
+prefer_profile(EbinDirA, EbinDirB, PreferredProfile) ->
+  case profile_of(EbinDirA) =:= PreferredProfile of
     true -> EbinDirA;
     false ->
-      case is_default_profile(EbinDirB) of
+      case profile_of(EbinDirB) =:= PreferredProfile of
         true -> EbinDirB;
         false -> EbinDirA
       end
   end.
 
--spec is_default_profile(EbinDir) -> Result when
+-spec profile_of(EbinDir) -> Result when
   EbinDir :: file:filename(),
-  Result :: boolean().
-is_default_profile(EbinDir) ->
+  Result :: string().
+profile_of(EbinDir) ->
   %% EbinDir is ".../_build/<profile>/lib/<app>/ebin" - walk up three
   %% levels from ebin/ to reach <profile>.
-  Profile = filename:basename(filename:dirname(filename:dirname(filename:dirname(EbinDir)))),
-  Profile =:= "default".
+  filename:basename(filename:dirname(filename:dirname(filename:dirname(EbinDir)))).
 
 -spec own_app_names(ProjectRoot) -> Result when
   ProjectRoot :: file:filename(),
@@ -332,7 +400,24 @@ include_dirs() ->
     "apps/*/test",
     "_build/*/lib/",
     "_build/*/lib/*/include"
-  ].
+  ] ++ proplists:get_value(include_dirs, user_config(), []).
+
+%% erlsp.config's otp_path key - a host OTP root to use instead of
+%% auto-discovering one via PATH (erlsp_host_erl:root_dir/0). Meant for a
+%% host with multiple Erlang installs (asdf/kerl) or one not on PATH at
+%% all, where auto-discovery would pick the wrong (or no) install.
+-spec otp_path() -> Result when
+  Result :: file:filename() | undefined.
+otp_path() ->
+  proplists:get_value(otp_path, user_config(), undefined).
+
+%% OTP application names (as strings) to skip when indexing the host's
+%% OTP install - erlsp.config's otp_apps_exclude key. Trims indexing cost
+%% for apps a project never touches.
+-spec otp_apps_exclude() -> Result when
+  Result :: [string()].
+otp_apps_exclude() ->
+  [atom_to_list(App) || App <- proplists:get_value(otp_apps_exclude, user_config(), [])].
 
 %% Joins each Dir spec onto RootPath and expands any glob wildcards
 %% (e.g. "apps/*/include") against the real filesystem.

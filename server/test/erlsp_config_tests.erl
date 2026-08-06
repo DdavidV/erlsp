@@ -23,7 +23,20 @@ erlsp_config_test_() ->
     fun project_root_for_path_walks_up_from_a_file/1,
     fun ebin_paths_dedupes_by_app_name_preferring_default/1,
     fun dep_source_dirs_excludes_own_apps/1,
-    fun clear_project_caches_keeps_root_path_but_forgets_cached_lookups/1
+    fun dep_source_dirs_excludes_configured_deps_exclude_apps/1,
+    fun clear_project_caches_keeps_root_path_but_forgets_cached_lookups/1,
+    fun missing_config_file_yields_all_defaults/1,
+    fun include_dirs_from_config_are_appended_to_the_built_in_list/1,
+    fun source_dirs_from_config_are_appended_to_the_built_in_list/1,
+    fun otp_path_defaults_to_undefined/1,
+    fun otp_path_from_config_is_returned_verbatim/1,
+    fun otp_apps_exclude_defaults_to_empty/1,
+    fun otp_apps_exclude_accepts_atoms/1,
+    fun deps_exclude_accepts_atoms/1,
+    fun rebar_profile_defaults_to_default/1,
+    fun rebar_profile_from_config_prefers_that_profile/1,
+    fun clear_project_caches_keeps_loaded_user_config/1,
+    fun malformed_config_file_falls_back_to_defaults/1
   ]}.
 
 single_app_project_root(_Pid) ->
@@ -104,6 +117,22 @@ dep_source_dirs_excludes_own_apps(_Pid) ->
   OwnSrcDir = filename:join(Root, "_build/default/lib/parse_transform_project/src"),
   ?_assertNot(lists:member(OwnSrcDir, DepDirs)).
 
+dep_source_dirs_excludes_configured_deps_exclude_apps(_Pid) ->
+  Root = fixture("parse_transform_project"),
+  ok = rebar3_compile(Root, []),
+  FakeDepSrcDir = filename:join(Root, "_build/default/lib/fake_dep_fixture/src"),
+  ok = filelib:ensure_dir(filename:join(FakeDepSrcDir, "placeholder")),
+  ConfigPath = filename:join(Root, "erlsp.config"),
+  ok = file:write_file(ConfigPath, "[{deps_exclude, [fake_dep_fixture]}].\n"),
+  try
+    ok = erlsp_config:init_workspace(erlsp_utils:path_to_uri(Root)),
+    DepDirs = erlsp_config:dep_source_dirs_for_root(Root),
+    ?_assertNot(lists:member(FakeDepSrcDir, DepDirs))
+  after
+    file:del_dir_r(FakeDepSrcDir),
+    file:delete(ConfigPath)
+  end.
+
 clear_project_caches_keeps_root_path_but_forgets_cached_lookups(_Pid) ->
   Root = fixture("include_lib_project"),
   ok = erlsp_config:init_workspace(erlsp_utils:path_to_uri(Root)),
@@ -116,6 +145,113 @@ clear_project_caches_keeps_root_path_but_forgets_cached_lookups(_Pid) ->
   CachedAfter = ets:tab2list(erlsp_config),
   [
     ?_assert(length(CachedBefore) > 1),
-    ?_assertEqual([{root_path, Root}], CachedAfter),
+    ?_assertEqual([{root_path, Root}, {user_config, []}], lists:sort(CachedAfter)),
     ?_assertEqual(Root, erlsp_config:root_path())
   ].
+
+-spec with_workspace_config(ConfigContents, TestFun) -> Result when
+  ConfigContents :: iodata() | none,
+  TestFun :: fun((file:filename()) -> Result),
+  Result :: term().
+with_workspace_config(ConfigContents, TestFun) ->
+  WorkspaceRoot = filename:join(
+    filename:absname("."),
+    "eunit_config_tmp_" ++ integer_to_list(erlang:unique_integer([positive]))
+  ),
+  ok = filelib:ensure_dir(filename:join(WorkspaceRoot, "placeholder")),
+  case ConfigContents of
+    none -> ok;
+    _Contents -> ok = file:write_file(filename:join(WorkspaceRoot, "erlsp.config"), ConfigContents)
+  end,
+  try
+    ok = erlsp_config:init_workspace(erlsp_utils:path_to_uri(WorkspaceRoot)),
+    TestFun(WorkspaceRoot)
+  after
+    file:del_dir_r(WorkspaceRoot)
+  end.
+
+missing_config_file_yields_all_defaults(_Pid) ->
+  with_workspace_config(none, fun(_WorkspaceRoot) ->
+    [
+      ?_assertEqual(undefined, erlsp_config:otp_path()),
+      ?_assertEqual([], erlsp_config:otp_apps_exclude()),
+      ?_assertEqual([], erlsp_config:deps_exclude()),
+      ?_assertEqual("default", erlsp_config:rebar_profile())
+    ]
+  end).
+
+include_dirs_from_config_are_appended_to_the_built_in_list(_Pid) ->
+  with_workspace_config("[{include_dirs, [\"vendor/include\"]}].\n", fun(WorkspaceRoot) ->
+    ok = filelib:ensure_dir(filename:join([WorkspaceRoot, "vendor", "include", "placeholder"])),
+    ok = filelib:ensure_dir(filename:join([WorkspaceRoot, "src", "placeholder"])),
+    IncludePaths = erlsp_config:include_paths_for_root(WorkspaceRoot),
+    [
+      ?_assert(lists:member(filename:join(WorkspaceRoot, "vendor/include"), IncludePaths)),
+      ?_assert(lists:member(filename:join(WorkspaceRoot, "src"), IncludePaths))
+    ]
+  end).
+
+source_dirs_from_config_are_appended_to_the_built_in_list(_Pid) ->
+  with_workspace_config("[{source_dirs, [\"lib\"]}].\n", fun(WorkspaceRoot) ->
+    ok = filelib:ensure_dir(filename:join([WorkspaceRoot, "lib", "placeholder"])),
+    ok = filelib:ensure_dir(filename:join([WorkspaceRoot, "src", "placeholder"])),
+    SourceDirs = erlsp_config:source_dirs_for_root(WorkspaceRoot),
+    [
+      ?_assert(lists:member(filename:join(WorkspaceRoot, "lib"), SourceDirs)),
+      ?_assert(lists:member(filename:join(WorkspaceRoot, "src"), SourceDirs))
+    ]
+  end).
+
+otp_path_defaults_to_undefined(_Pid) ->
+  with_workspace_config(none, fun(_WorkspaceRoot) ->
+    ?_assertEqual(undefined, erlsp_config:otp_path())
+  end).
+
+otp_path_from_config_is_returned_verbatim(_Pid) ->
+  with_workspace_config("[{otp_path, \"/opt/otp-27\"}].\n", fun(_WorkspaceRoot) ->
+    ?_assertEqual("/opt/otp-27", erlsp_config:otp_path())
+  end).
+
+otp_apps_exclude_defaults_to_empty(_Pid) ->
+  with_workspace_config(none, fun(_WorkspaceRoot) ->
+    ?_assertEqual([], erlsp_config:otp_apps_exclude())
+  end).
+
+otp_apps_exclude_accepts_atoms(_Pid) ->
+  with_workspace_config("[{otp_apps_exclude, [wx, observer]}].\n", fun(_WorkspaceRoot) ->
+    ?_assertEqual(["wx", "observer"], erlsp_config:otp_apps_exclude())
+  end).
+
+deps_exclude_accepts_atoms(_Pid) ->
+  with_workspace_config("[{deps_exclude, [meck]}].\n", fun(_WorkspaceRoot) ->
+    ?_assertEqual(["meck"], erlsp_config:deps_exclude())
+  end).
+
+rebar_profile_defaults_to_default(_Pid) ->
+  with_workspace_config(none, fun(_WorkspaceRoot) ->
+    ?_assertEqual("default", erlsp_config:rebar_profile())
+  end).
+
+rebar_profile_from_config_prefers_that_profile(_Pid) ->
+  with_workspace_config("[{rebar_profile, test}].\n", fun(WorkspaceRoot) ->
+    AppEbin = filename:join([WorkspaceRoot, "_build", "default", "lib", "myapp", "ebin"]),
+    TestEbin = filename:join([WorkspaceRoot, "_build", "test", "lib", "myapp", "ebin"]),
+    ok = filelib:ensure_dir(filename:join(AppEbin, "placeholder")),
+    ok = filelib:ensure_dir(filename:join(TestEbin, "placeholder")),
+    EbinDirs = erlsp_config:ebin_paths_for_root(WorkspaceRoot),
+    ?_assertEqual([TestEbin], EbinDirs)
+  end).
+
+clear_project_caches_keeps_loaded_user_config(_Pid) ->
+  with_workspace_config("[{otp_path, \"/opt/otp-27\"}].\n", fun(_WorkspaceRoot) ->
+    ok = erlsp_config:clear_project_caches(),
+    ?_assertEqual("/opt/otp-27", erlsp_config:otp_path())
+  end).
+
+malformed_config_file_falls_back_to_defaults(_Pid) ->
+  with_workspace_config("not valid erlang terms }{\n", fun(_WorkspaceRoot) ->
+    [
+      ?_assertEqual(undefined, erlsp_config:otp_path()),
+      ?_assertEqual([], erlsp_config:otp_apps_exclude())
+    ]
+  end).

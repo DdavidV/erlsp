@@ -29,6 +29,14 @@ run(_Uri, Token) ->
 -spec host_otp_root_dir() -> Result when
   Result :: file:filename().
 host_otp_root_dir() ->
+  case erlsp_config:otp_path() of
+    undefined -> discover_host_otp_root_dir();
+    ConfiguredPath -> ConfiguredPath
+  end.
+
+-spec discover_host_otp_root_dir() -> Result when
+  Result :: file:filename().
+discover_host_otp_root_dir() ->
   case erlsp_host_erl:root_dir() of
     {ok, RootDir} ->
       RootDir;
@@ -52,4 +60,22 @@ otp_erl_files(RootDir) ->
   %% "**" recurses into subdirectories - some apps nest source further
   %% (e.g. wx's generated bindings live under lib/wx-*/src/gen/*.erl), not
   %% just directly under src/.
-  filelib:wildcard(filename:join([RootDir, "lib", "*", "src", "**/*.erl"])).
+  AllFiles = filelib:wildcard(filename:join([RootDir, "lib", "*", "src", "**/*.erl"])),
+  ExcludedApps = erlsp_config:otp_apps_exclude(),
+  [Path || Path <- AllFiles, not lists:member(otp_app_name(RootDir, Path), ExcludedApps)].
+
+%% Path is ".../lib/<app>-<vsn>/src/...", the app name being everything
+%% up to (not including) the last "-" in the lib/ subdirectory's basename
+%% - OTP application directory names are always "<app>-<vsn>".
+-spec otp_app_name(RootDir, Path) -> Result when
+  RootDir :: file:filename(),
+  Path :: file:filename(),
+  Result :: string().
+otp_app_name(RootDir, Path) ->
+  LibDir = filename:join([RootDir, "lib"]),
+  Relative = string:prefix(Path, LibDir ++ "/"),
+  [AppDir | _Rest] = string:split(Relative, "/"),
+  case string:split(AppDir, "-", trailing) of
+    [AppName, _Vsn] -> AppName;
+    [AppName] -> AppName
+  end.
