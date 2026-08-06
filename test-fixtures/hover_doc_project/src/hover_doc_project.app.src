@@ -1,0 +1,11 @@
+{application, hover_doc_project, [
+  {description, "erlsp fixture: exercises hover's -spec/-doc/EDoc-fallback resolution"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib
+  ]},
+  {env, []},
+  {modules, []}
+]}.

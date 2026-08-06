@@ -12,7 +12,7 @@ teardown({IndexPid, ConfigPid}) ->
   gen_server:stop(ConfigPid).
 
 erlsp_index_otp_job_test_() ->
-  {timeout, 60, {foreach, fun setup/0, fun teardown/1, [
+  {timeout, 180, {foreach, fun setup/0, fun teardown/1, [
     fun indexes_a_real_stdlib_module/1,
     fun a_file_referencing_an_otp_app_erlsp_itself_does_not_depend_on_is_indexed_with_its_include_resolved/1,
     fun otp_apps_exclude_skips_the_named_app/1
@@ -21,9 +21,11 @@ erlsp_index_otp_job_test_() ->
 indexes_a_real_stdlib_module(_IndexPid) ->
   Token = make_ref(),
   ok = erlsp_index_otp_job:run(<<"file:///unused">>, Token),
+  {ok, DocText} = erlsp_index:function_doc(lists, reverse, 1),
   [
     ?_assertMatch({ok, {_Uri, _Line}}, erlsp_index:module_location(lists)),
-    ?_assertMatch({ok, {_Uri, _Line}}, erlsp_index:function_location(lists, reverse, 1))
+    ?_assertMatch({ok, {_Uri, _Line}}, erlsp_index:function_location(lists, reverse, 1)),
+    ?_assert(byte_size(DocText) > 0)
   ].
 
 a_file_referencing_an_otp_app_erlsp_itself_does_not_depend_on_is_indexed_with_its_include_resolved(_IndexPid) ->

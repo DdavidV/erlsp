@@ -210,6 +210,7 @@ handle_message(#{id := Id, method := <<"initialize">>, params := Params}, State)
       save => #{includeText => false}
     },
     definitionProvider => true,
+    hoverProvider => true,
     completionProvider => #{triggerCharacters => [<<":">>, <<"?">>, <<"#">>]}
   },
   erlsp_io:send(erlsp_jsonrpc:reply(Id, #{capabilities => Capabilities})),
@@ -255,6 +256,14 @@ handle_message(#{id := Id, method := <<"textDocument/definition">>, params := Pa
       #{uri => DefinitionUri, range => #{start => Position, 'end' => Position}};
     error ->
       null
+  end,
+  erlsp_io:send(erlsp_jsonrpc:reply(Id, Result)),
+  State;
+handle_message(#{id := Id, method := <<"textDocument/hover">>, params := Params}, State) ->
+  #{textDocument := #{uri := Uri}, position := #{line := Line, character := Character}} = Params,
+  Result = case erlsp_hover:hover(Uri, Line, Character) of
+    {ok, Contents} -> #{contents => Contents};
+    error -> null
   end,
   erlsp_io:send(erlsp_jsonrpc:reply(Id, Result)),
   State;

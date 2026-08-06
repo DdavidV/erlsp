@@ -1,8 +1,25 @@
 -module(erlsp_definition).
 
 -export([
-  locate/3
+  locate/3,
+  resolve/3
 ]).
+
+-export_type([
+  symbol/0
+]).
+
+%% What the cursor is on, tagged by kind - the same information locate/3
+%% has always resolved internally, but exposed directly (instead of only
+%% ever being turned into a location) so other providers (e.g. hover) can
+%% look up something other than a definition site for the same symbol.
+-type symbol() ::
+  {function, module(), atom(), arity()} |
+  {type, module(), atom(), arity()} |
+  {record, module(), atom()} |
+  {macro, erlsp_documents:uri(), atom()} |
+  {module, module()} |
+  {include, erlsp_documents:uri(), string()}.
 
 %% Finds the definition of whatever's at Line/Character in Uri, by
 %% tokenizing the file and reading the identifier under the cursor.
@@ -16,6 +33,22 @@
   Character :: non_neg_integer(),
   Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
 locate(Uri, Line, Character) ->
+  case resolve(Uri, Line, Character) of
+    {ok, Symbol} -> symbol_location(Symbol);
+    error -> error
+  end.
+
+%% Same cursor resolution as locate/3, but returns the tagged symbol
+%% itself instead of immediately resolving it to a definition site - lets
+%% a caller (e.g. hover) look up something else about the same symbol
+%% (its -spec/-doc text) without duplicating the cursor/token
+%% classification logic locate/3 already does.
+-spec resolve(Uri, Line, Character) -> Result when
+  Uri :: erlsp_documents:uri(),
+  Line :: non_neg_integer(),
+  Character :: non_neg_integer(),
+  Result :: {ok, symbol()} | error.
+resolve(Uri, Line, Character) ->
   case file_text(Uri) of
     {ok, Text} ->
       %% erl_scan locations are 1-indexed, LSP positions are 0-indexed.
@@ -28,6 +61,22 @@ locate(Uri, Line, Character) ->
     error ->
       error
   end.
+
+-spec symbol_location(Symbol) -> Result when
+  Symbol :: symbol(),
+  Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
+symbol_location({function, Module, Name, Arity}) ->
+  erlsp_index:function_location(Module, Name, Arity);
+symbol_location({type, Module, Name, Arity}) ->
+  erlsp_index:type_location(Module, Name, Arity);
+symbol_location({record, Module, Name}) ->
+  erlsp_index:record_location(Module, Name);
+symbol_location({macro, Uri, Name}) ->
+  first_macro_location([Uri | erlsp_index:included_uris(Uri)], Name);
+symbol_location({module, Module}) ->
+  erlsp_index:module_location(Module);
+symbol_location({include, Uri, HeaderPath}) ->
+  resolve_include(Uri, HeaderPath).
 
 -spec file_text(Uri) -> Result when
   Uri :: erlsp_documents:uri(),
@@ -109,7 +158,7 @@ token_width(_OtherToken) ->
   ReverseBefore :: [erl_scan:token()],
   After :: [erl_scan:token()],
   Uri :: erlsp_documents:uri(),
-  Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
+  Result :: {ok, symbol()} | error.
 resolve_call(_AllTokens, _ReverseBefore,
              [{atom, _, Module}, {':', _}, {atom, _, Function}, {'(', _} | Rest], _Uri) ->
   %% Cursor on the Mod part of Mod:Fun(...) or Mod:Type(...) - same
@@ -120,32 +169,32 @@ resolve_call(_AllTokens, [{':', _}, {atom, _, Module} | _EarlierTokens],
   %% Cursor on the Fun/Type part of Mod:Fun(...) - same call, resolved
   %% from that side instead of the Mod side.
   resolve_remote_function_or_type(Module, Function, count_arity(Rest));
-resolve_call(AllTokens, _ReverseBefore, [{'?', _}, NameToken | _Rest], Uri) ->
+resolve_call(_AllTokens, _ReverseBefore, [{'?', _}, NameToken | _Rest], Uri) ->
   %% Cursor on the '?' of ?MACRO or ?MACRO(...).
-  resolve_macro(AllTokens, Uri, macro_name(NameToken));
-resolve_call(AllTokens, [{'?', _} | _EarlierTokens], [NameToken | _Rest], Uri)
+  {ok, {macro, Uri, macro_name(NameToken)}};
+resolve_call(_AllTokens, [{'?', _} | _EarlierTokens], [NameToken | _Rest], Uri)
     when element(1, NameToken) =:= var; element(1, NameToken) =:= atom ->
   %% Cursor on the NAME part of ?NAME or ?NAME(...).
-  resolve_macro(AllTokens, Uri, macro_name(NameToken));
-resolve_call(AllTokens, _ReverseBefore, [{'#', _}, {atom, _, Record}, Next | _Rest], Uri)
+  {ok, {macro, Uri, macro_name(NameToken)}};
+resolve_call(AllTokens, _ReverseBefore, [{'#', _}, {atom, _, Record}, Next | _Rest], _Uri)
     when element(1, Next) =:= '{'; element(1, Next) =:= '.' ->
   %% Cursor on the '#' of #record{...} (construction/update) or
   %% #record.field (field access).
-  resolve_record(AllTokens, Uri, Record);
-resolve_call(AllTokens, [{'#', _} | _EarlierTokens], [{atom, _, Record}, Next | _Rest], Uri)
+  resolve_record(AllTokens, Record);
+resolve_call(AllTokens, [{'#', _} | _EarlierTokens], [{atom, _, Record}, Next | _Rest], _Uri)
     when element(1, Next) =:= '{'; element(1, Next) =:= '.' ->
   %% Cursor on the name part of #record{...} or #record.field.
-  resolve_record(AllTokens, Uri, Record);
+  resolve_record(AllTokens, Record);
 resolve_call(_AllTokens, [{'-', _} | _EarlierTokens],
              [{atom, _, Attribute}, {'(', _}, {string, _, HeaderPath}, {')', _} | _Rest], Uri)
     when Attribute =:= include; Attribute =:= include_lib ->
   %% Cursor on 'include'/'include_lib' itself, e.g. -include("erlsp.hrl").
-  resolve_include(Uri, HeaderPath);
+  {ok, {include, Uri, HeaderPath}};
 resolve_call(_AllTokens, [{'(', _}, {atom, _, Attribute}, {'-', _} | _EarlierTokens],
              [{string, _, HeaderPath}, {')', _} | _Rest], Uri)
     when Attribute =:= include; Attribute =:= include_lib ->
   %% Cursor on the header path string itself.
-  resolve_include(Uri, HeaderPath);
+  {ok, {include, Uri, HeaderPath}};
 resolve_call(_AllTokens, [{'fun', _} | _EarlierTokens],
              [{atom, _, Module}, {':', _}, {atom, _, Function}, {'/', _}, {integer, _, Arity} | _Rest], _Uri) ->
   %% Cursor on the Mod part of fun Mod:Fun/Arity.
@@ -155,9 +204,9 @@ resolve_call(_AllTokens, [{':', _}, {atom, _, Module}, {'fun', _} | _EarlierToke
   %% Cursor on the Fun part of fun Mod:Fun/Arity.
   resolve_remote_function_or_type(Module, Function, Arity);
 resolve_call(AllTokens, [{'fun', _} | _EarlierTokens],
-             [{atom, _, Name}, {'/', _}, {integer, _, Arity} | _Rest], Uri) ->
+             [{atom, _, Name}, {'/', _}, {integer, _, Arity} | _Rest], _Uri) ->
   %% Cursor on Name in a bare fun Name/Arity reference (local function).
-  resolve_local_bif_or_type(AllTokens, Uri, Name, Arity);
+  resolve_local_bif_or_type(AllTokens, Name, Arity);
 resolve_call(AllTokens, ReverseBefore, [{atom, _, Name}, {'/', _}, {integer, _, Arity} | _Rest], _Uri) ->
   %% Cursor on Name in a Name/Arity entry, e.g. inside -export([...]) or
   %% -export_type([...]) - only meaningful within one of those attribute
@@ -167,17 +216,17 @@ resolve_call(AllTokens, ReverseBefore, [{atom, _, Name}, {'/', _}, {integer, _, 
     {ok, export_type} -> resolve_own_type(AllTokens, Name, Arity);
     error -> error
   end;
-resolve_call(AllTokens, _ReverseBefore, [{atom, _, Function}, {'(', _} | Rest], Uri) ->
+resolve_call(AllTokens, _ReverseBefore, [{atom, _, Function}, {'(', _} | Rest], _Uri) ->
   %% Bare Fun(...): local call, auto-imported BIF, or a type reference
   %% (types and calls are syntactically identical at this point).
-  resolve_local_bif_or_type(AllTokens, Uri, Function, count_arity(Rest));
+  resolve_local_bif_or_type(AllTokens, Function, count_arity(Rest));
 resolve_call(_AllTokens, _ReverseBefore, [{atom, _, Module} | _Rest], _Uri) ->
   %% Last resort: a bare atom not covered by any pattern above (e.g. a
   %% -behaviour(Module) argument, a parse_transform module name inside
   %% -compile({parse_transform, Module}), or a plain module-name atom in a
   %% child spec list like [erlsp_worker_sup, ...]) - try it as a module
   %% name, since that's what all of these actually are.
-  erlsp_index:module_location(Module);
+  {ok, {module, Module}};
 resolve_call(_AllTokens, _ReverseBefore, _After, _Uri) ->
   error.
 
@@ -228,10 +277,10 @@ enclosing_export_attribute(_ReverseBefore) ->
   Tokens :: [erl_scan:token()],
   Name :: atom(),
   Arity :: arity(),
-  Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
+  Result :: {ok, symbol()} | error.
 resolve_own_function(Tokens, Name, Arity) ->
   case erlsp_utils:module_attribute(Tokens) of
-    {ok, Module} -> erlsp_index:function_location(Module, Name, Arity);
+    {ok, Module} -> {ok, {function, Module, Name, Arity}};
     error -> error
   end.
 
@@ -241,10 +290,10 @@ resolve_own_function(Tokens, Name, Arity) ->
   Tokens :: [erl_scan:token()],
   Name :: atom(),
   Arity :: arity(),
-  Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
+  Result :: {ok, symbol()} | error.
 resolve_own_type(Tokens, Name, Arity) ->
   case erlsp_utils:module_attribute(Tokens) of
-    {ok, Module} -> erlsp_index:type_location(Module, Name, Arity);
+    {ok, Module} -> {ok, {type, Module, Name, Arity}};
     error -> error
   end.
 
@@ -297,11 +346,15 @@ count_arity([], _Depth, Commas) ->
   Module :: module(),
   Name :: atom(),
   Arity :: arity(),
-  Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
+  Result :: {ok, symbol()} | error.
 resolve_remote_function_or_type(Module, Name, Arity) ->
   case erlsp_index:function_location(Module, Name, Arity) of
-    {ok, Location} -> {ok, Location};
-    error -> erlsp_index:type_location(Module, Name, Arity)
+    {ok, _Location} -> {ok, {function, Module, Name, Arity}};
+    error ->
+      case erlsp_index:type_location(Module, Name, Arity) of
+        {ok, _Location} -> {ok, {type, Module, Name, Arity}};
+        error -> error
+      end
   end.
 
 %% A bare Name(...) could be a call to a function defined in Uri's own
@@ -315,17 +368,16 @@ resolve_remote_function_or_type(Module, Name, Arity) ->
 %% and an import for the same Name/Arity can't coexist - the compiler
 %% itself rejects that as an ambiguous import - so this ordering never
 %% actually has to choose between them), which is tried before erlang.
--spec resolve_local_bif_or_type(Tokens, Uri, Name, Arity) -> Result when
+-spec resolve_local_bif_or_type(Tokens, Name, Arity) -> Result when
   Tokens :: [erl_scan:token()],
-  Uri :: erlsp_documents:uri(),
   Name :: atom(),
   Arity :: arity(),
-  Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
-resolve_local_bif_or_type(Tokens, _Uri, Name, Arity) ->
+  Result :: {ok, symbol()} | error.
+resolve_local_bif_or_type(Tokens, Name, Arity) ->
   case erlsp_utils:module_attribute(Tokens) of
     {ok, Module} ->
       case erlsp_index:function_location(Module, Name, Arity) of
-        {ok, Location} -> {ok, Location};
+        {ok, _Location} -> {ok, {function, Module, Name, Arity}};
         error -> resolve_imported_or_local_type(Module, Name, Arity)
       end;
     error ->
@@ -336,12 +388,12 @@ resolve_local_bif_or_type(Tokens, _Uri, Name, Arity) ->
   Module :: module(),
   Name :: atom(),
   Arity :: arity(),
-  Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
+  Result :: {ok, symbol()} | error.
 resolve_imported_or_local_type(Module, Name, Arity) ->
   case erlsp_index:imported_module(Module, Name, Arity) of
     {ok, ImportedModule} ->
       case erlsp_index:function_location(ImportedModule, Name, Arity) of
-        {ok, Location} -> {ok, Location};
+        {ok, _Location} -> {ok, {function, ImportedModule, Name, Arity}};
         error -> resolve_local_type_or_erlang(Module, Name, Arity)
       end;
     error ->
@@ -352,10 +404,10 @@ resolve_imported_or_local_type(Module, Name, Arity) ->
   Module :: module(),
   Name :: atom(),
   Arity :: arity(),
-  Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
+  Result :: {ok, symbol()} | error.
 resolve_local_type_or_erlang(Module, Name, Arity) ->
   case erlsp_index:type_location(Module, Name, Arity) of
-    {ok, Location} -> {ok, Location};
+    {ok, _Location} -> {ok, {type, Module, Name, Arity}};
     error -> resolve_erlang_function_or_type(Name, Arity)
   end.
 
@@ -364,26 +416,25 @@ resolve_local_type_or_erlang(Module, Name, Arity) ->
 -spec resolve_erlang_function_or_type(Name, Arity) -> Result when
   Name :: atom(),
   Arity :: arity(),
-  Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
+  Result :: {ok, symbol()} | error.
 resolve_erlang_function_or_type(Name, Arity) ->
   case erlsp_index:function_location(erlang, Name, Arity) of
-    {ok, Location} -> {ok, Location};
-    error -> erlsp_index:type_location(erlang, Name, Arity)
+    {ok, _Location} -> {ok, {function, erlang, Name, Arity}};
+    error ->
+      case erlsp_index:type_location(erlang, Name, Arity) of
+        {ok, _Location} -> {ok, {type, erlang, Name, Arity}};
+        error -> error
+      end
   end.
 
 %% ?MACRO or ?MACRO(...): could be defined directly in Uri, or in any
 %% header Uri includes (see erlsp_index:included_uris/1) - checked in
 %% that order since a file's own -define shadows one of the same name
-%% from an include.
--spec resolve_macro(Tokens, Uri, Macro) -> Result when
-  Tokens :: [erl_scan:token()],
-  Uri :: erlsp_documents:uri(),
-  Macro :: atom(),
-  Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
-resolve_macro(_Tokens, Uri, Macro) ->
-  Candidates = [Uri | erlsp_index:included_uris(Uri)],
-  first_macro_location(Candidates, Macro).
-
+%% from an include. Used by symbol_location/1 to resolve a {macro, Uri,
+%% Name} symbol back to its actual defining location - resolve_call/4
+%% itself only tags the macro with the Uri it was referenced FROM, since
+%% which of that Uri's included headers actually defines it isn't known
+%% (or needed) until something asks for its location/doc.
 -spec first_macro_location(Uris, Macro) -> Result when
   Uris :: [erlsp_documents:uri()],
   Macro :: atom(),
@@ -398,13 +449,12 @@ first_macro_location([], _Macro) ->
 
 %% #record{...}: resolved against Uri's own module, matching how records
 %% are indexed (see erlsp_index:index_forms/2).
--spec resolve_record(Tokens, Uri, Record) -> Result when
+-spec resolve_record(Tokens, Record) -> Result when
   Tokens :: [erl_scan:token()],
-  Uri :: erlsp_documents:uri(),
   Record :: atom(),
-  Result :: {ok, {erlsp_documents:uri(), non_neg_integer()}} | error.
-resolve_record(Tokens, _Uri, Record) ->
+  Result :: {ok, symbol()} | error.
+resolve_record(Tokens, Record) ->
   case erlsp_utils:module_attribute(Tokens) of
-    {ok, Module} -> erlsp_index:record_location(Module, Record);
+    {ok, Module} -> {ok, {record, Module, Record}};
     error -> error
   end.

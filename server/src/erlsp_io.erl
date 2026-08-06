@@ -66,4 +66,14 @@ read_headers(Acc) ->
   Message :: iodata(),
   Result :: ok.
 send(Message) ->
-  io:put_chars(standard_io, Message).
+  %% Flattened to a single binary and written via "~s", rather than
+  %% io:put_chars(standard_io, Message) directly on Message as-is: Message
+  %% is a mixed iolist.
+  %% put_chars on that mix, even with standard_io in latin1 mode,
+  %% was found to mangle the binary part - each byte of any UTF-8 multi-byte sequence
+  %% in Body got reinterpreted as its  own Unicode codepoint and re-encoded,
+  %% producing fewer bytes than the already-computed Content-Length promised -
+  %% desyncing every message  after it and corrupting the whole session.
+  %% Flattening to one binary first and writing via ~s  avoids that
+  %% mixed-iolist path entirely.
+  ok = io:format(standard_io, "~s", [iolist_to_binary(Message)]).
