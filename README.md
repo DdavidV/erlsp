@@ -12,6 +12,15 @@ Erlang language server (`server/`, shipped as a self-contained OTP release with 
 Inspired by [`erlang_ls`](https://github.com/erlang-ls/erlang_ls) and [`elp`](https://github.com/WhatsApp/erlang-language-platform) (Erlang Language Platform),
 two existing Erlang language servers whose design choices (and tradeoffs) informed several architectural decisions here.
 
+## Features
+
+- Compiler diagnostics
+- [elvis](docs/elvis.md) diagnostics
+- Go-to-definition
+- Hover to docs and specs of a function
+- Completion for functions, types, records, macros.
+- [Call graph](docs/callgraph.md): visualize which function calls which, across the whole workspace.
+
 ## Requirements
 
 To build erlsp from source:

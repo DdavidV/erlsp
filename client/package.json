@@ -64,6 +64,10 @@
         "title": "erlsp: Reindex Workspace"
       },
       {
+        "command": "erlsp.showCallGraph",
+        "title": "erlsp: Show Call Graph"
+      },
+      {
         "command": "erlsp.restartServer",
         "title": "erlsp: Restart Language Server"
       }
@@ -78,6 +82,10 @@
     "package": "vsce package"
   },
   "devDependencies": {
+    "@types/d3-drag": "^3.0.7",
+    "@types/d3-force": "^3.0.10",
+    "@types/d3-selection": "^3.0.11",
+    "@types/d3-zoom": "^3.0.8",
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^3.9.2",
@@ -87,6 +95,10 @@
     "vscode-textmate": "^9.1.0"
   },
   "dependencies": {
+    "d3-drag": "^3.0.0",
+    "d3-force": "^3.0.0",
+    "d3-selection": "^3.0.0",
+    "d3-zoom": "^3.0.0",
     "vscode-languageclient": "^9.0.1"
   }
 }

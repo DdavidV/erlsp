@@ -5,6 +5,8 @@ import {
   LanguageClientOptions,
   ServerOptions,
 } from "vscode-languageclient/node";
+import { CallGraphSnapshot } from "./callGraph";
+import { showCallGraphPanel } from "./callGraphPanel";
 
 let client: LanguageClient | undefined;
 
@@ -54,6 +56,22 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       await client.sendNotification("erlsp/reindexWorkspace");
       vscode.window.setStatusBarMessage("erlsp: reindexing workspace", 5000);
+    }),
+    vscode.commands.registerCommand("erlsp.showCallGraph", async () => {
+      if (!client) {
+        return;
+      }
+      vscode.window.setStatusBarMessage("erlsp: building call graph", 5000);
+      try {
+        const snapshot = await client.sendRequest<CallGraphSnapshot>(
+          "erlsp/showCallGraph"
+        );
+        showCallGraphPanel(context, snapshot);
+      } catch (requestErr) {
+        vscode.window.showErrorMessage(
+          `erlsp: failed to build call graph: ${requestErr}`
+        );
+      }
     }),
     vscode.commands.registerCommand("erlsp.restartServer", async () => {
       if (!client) {

@@ -3,7 +3,7 @@ const esbuild = require("esbuild");
 const watch = process.argv.includes("--watch");
 
 async function main() {
-  const ctx = await esbuild.context({
+  const extensionCtx = await esbuild.context({
     entryPoints: ["src/extension.ts"],
     bundle: true,
     outfile: "out/extension.js",
@@ -14,11 +14,24 @@ async function main() {
     minify: !watch,
   });
 
+  const callGraphViewCtx = await esbuild.context({
+    entryPoints: ["src/callGraphView.ts"],
+    bundle: true,
+    outfile: "out/callGraphView.js",
+    format: "iife",
+    platform: "browser",
+    sourcemap: true,
+    minify: !watch,
+  });
+
   if (watch) {
-    await ctx.watch();
+    await extensionCtx.watch();
+    await callGraphViewCtx.watch();
   } else {
-    await ctx.rebuild();
-    await ctx.dispose();
+    await extensionCtx.rebuild();
+    await extensionCtx.dispose();
+    await callGraphViewCtx.rebuild();
+    await callGraphViewCtx.dispose();
   }
 }
 

@@ -10,6 +10,26 @@ merge_diagnostics_test_() ->
     fun different_uris_are_kept_independent/0
   ].
 
+has_job_test_() ->
+  [
+    fun has_job_is_false_for_a_uri_with_no_jobs_at_all/0,
+    fun has_job_is_false_when_the_uri_has_only_a_different_job_kind/0,
+    fun has_job_is_true_once_that_job_kind_is_tracked_for_the_uri/0
+  ].
+
+has_job_is_false_for_a_uri_with_no_jobs_at_all() ->
+  ?assertNot(erlsp_server:has_job(<<"file:///root/">>, erlsp_callgraph_build_job, #{})).
+
+has_job_is_false_when_the_uri_has_only_a_different_job_kind() ->
+  Uri = <<"file:///root/">>,
+  Jobs = #{Uri => #{erlsp_index_workspace_job => self()}},
+  ?assertNot(erlsp_server:has_job(Uri, erlsp_callgraph_build_job, Jobs)).
+
+has_job_is_true_once_that_job_kind_is_tracked_for_the_uri() ->
+  Uri = <<"file:///root/">>,
+  Jobs = #{Uri => #{erlsp_callgraph_build_job => self()}},
+  ?assert(erlsp_server:has_job(Uri, erlsp_callgraph_build_job, Jobs)).
+
 first_job_for_a_uri_is_recorded_alone() ->
   Uri = <<"file:///a.erl">>,
   Diagnostics = merge(#{}, Uri, erlsp_diag_compiler, [compiler_diag()]),

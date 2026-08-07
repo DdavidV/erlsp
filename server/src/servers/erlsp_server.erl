@@ -10,7 +10,12 @@
 -type diagnostics_for_uri() :: #{module() => [erlsp_job:diagnostic()]}.
 -type diagnostics() :: #{erlsp_documents:uri() => diagnostics_for_uri()}.
 
--record(state, {io :: pid(), jobs :: jobs(), diagnostics :: diagnostics()}).
+-record(state, {
+  io :: pid(),
+  jobs :: jobs(),
+  diagnostics :: diagnostics(),
+  pending_callgraph_requests :: [jsx:json_term()]
+}).
 
 -type state() :: #state{}.
 
@@ -33,9 +38,10 @@
   terminate/2
 ]).
 
-%% Exported for direct unit testing of the diagnostics-merging logic.
+%% Exported for direct unit testing of otherwise-internal logic.
 -export([
-  merge_diagnostics/4
+  merge_diagnostics/4,
+  has_job/3
 ]).
 
 -spec start_link() -> Result when
@@ -49,7 +55,7 @@ start_link() ->
 init(_InitArgs) ->
   process_flag(trap_exit, true),
   {ok, IoPid} = erlsp_io:start_link(),
-  {ok, #state{io = IoPid, jobs = #{}, diagnostics = #{}}}.
+  {ok, #state{io = IoPid, jobs = #{}, diagnostics = #{}, pending_callgraph_requests = []}}.
 
 -spec handle_call(Request, From, State) -> Result when
   Request :: term(),
@@ -153,6 +159,19 @@ start_job(Uri, JobModule, Jobs) ->
   JobsForUri = maps:get(Uri, CancelledJobs, #{}),
   CancelledJobs#{Uri => JobsForUri#{JobModule => WorkerPid}}.
 
+%% Whether JobModule already has a worker tracked for Uri - used by the
+%% erlsp/showCallGraph handler to decide whether a fresh
+%% erlsp_callgraph_build_job needs starting or whether an already-running
+%% one should just be joined (via pending_callgraph_requests) instead.
+-spec has_job(Uri, JobModule, Jobs) -> Result when
+  Uri :: erlsp_documents:uri(),
+  JobModule :: module(),
+  Jobs :: jobs(),
+  Result :: boolean().
+has_job(Uri, JobModule, Jobs) ->
+  JobsForUri = maps:get(Uri, Jobs, #{}),
+  maps:is_key(JobModule, JobsForUri).
+
 %% Cancels JobModule's in-flight job for Uri, if any, leaving any other
 %% job kind running for that same Uri untouched.
 -spec cancel_job(Uri, JobModule, Jobs) -> Result when
@@ -195,7 +214,11 @@ handle_job_result(JobModule, Uri, {job_crashed, Class, Reason, Stacktrace}, Stat
 handle_job_result(JobModule, Uri, Diagnostics, State) when ?IS_DIAGNOSTICS_JOB(JobModule) ->
   record_and_publish_diagnostics(JobModule, Uri, Diagnostics, State);
 handle_job_result(JobModule, _Uri, ok, State) when ?IS_INDEX_JOB(JobModule) ->
-  State.
+  State;
+handle_job_result(erlsp_callgraph_build_job, _Uri, ok, State) ->
+  Snapshot = erlsp_callgraph:snapshot(),
+  [erlsp_io:send(erlsp_jsonrpc:reply(Id, Snapshot))|| Id <- State#state.pending_callgraph_requests],
+  State#state{pending_callgraph_requests = []}.
 
 %% Records JobModule's latest diagnostics for Uri, then publishes the
 %% UNION of every diagnostics-producing job's latest result for that
@@ -260,9 +283,26 @@ handle_message(#{method := <<"erlsp/reindexWorkspace">>}, State) ->
   ?LOG_INFO("reindexing workspace"),
   ok = erlsp_index:clear(),
   ok = erlsp_config:clear_project_caches(),
+  ok = erlsp_callgraph:clear(),
   RootUri = erlsp_utils:path_to_uri(erlsp_config:root_path()),
   Jobs = start_index_jobs(RootUri, State#state.jobs),
   State#state{jobs = Jobs};
+%% Custom request backing the: "erlsp: Show Call Graph" client command.
+handle_message(#{id := Id, method := <<"erlsp/showCallGraph">>}, State) ->
+  ?LOG_INFO("showing call graph"),
+  case erlsp_callgraph:status() of
+    built ->
+      erlsp_io:send(erlsp_jsonrpc:reply(Id, erlsp_callgraph:snapshot())),
+      State;
+    not_built ->
+      RootUri = erlsp_utils:path_to_uri(erlsp_config:root_path()),
+      Jobs = case has_job(RootUri, erlsp_callgraph_build_job, State#state.jobs) of
+        true -> State#state.jobs;
+        false -> start_job(RootUri, erlsp_callgraph_build_job, State#state.jobs)
+      end,
+      Pending = [Id | State#state.pending_callgraph_requests],
+      State#state{jobs = Jobs, pending_callgraph_requests = Pending}
+  end;
 handle_message(#{method := <<"textDocument/didOpen">>, params := Params}, State) ->
   #{textDocument := #{uri := Uri, text := Text}} = Params,
   erlsp_documents:open(Uri, Text),

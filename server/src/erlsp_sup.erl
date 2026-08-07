@@ -31,6 +31,10 @@ init(_InitArgs) ->
       start => {erlsp_index, start_link, []}
     },
     #{
+      id => erlsp_callgraph,
+      start => {erlsp_callgraph, start_link, []}
+    },
+    #{
       id => erlsp_documents,
       start => {erlsp_documents, start_link, []}
     },
